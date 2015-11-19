@@ -1,1 +1,1 @@
-# functional-harness
+# saucelabs-connector
