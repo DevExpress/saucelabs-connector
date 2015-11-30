@@ -25,9 +25,9 @@ export default class SaucelabsConnector {
         webDriver.once('status', () => {
             getSessionId()
                 .then(sid => {
-                    process.stdout.write('Browser started. See at https://saucelabs.com/tests/' + sid + '\n');
+                    process.stdout.write('Browser started. See https://saucelabs.com/tests/' + sid + '\n');
 
-                    // HACK: if the webDriver don't get any command during 1000s it's fail
+                    // HACK: if the webDriver doesn't get any command within 1000s, it fails
                     // with the timeout error. We should send any command to avoid this.
                     webDriver.pingIntervalId = setInterval(pingWebDriver, WEB_DRIVER_PING_INTERVAL);
                 });
