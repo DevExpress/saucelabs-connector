@@ -2,10 +2,20 @@ import SauceTunnel from 'sauce-tunnel';
 import wd from 'wd';
 import promisify from 'es6-promisify';
 import { Promise } from 'es6-promise';
+import request from 'request';
+import denodeify from 'denodeify';
+import { format } from 'util';
+import wait from './utils/wait';
 
 
-const WEB_DRIVER_IDLE_TIMEOUT  = 1000;
-const WEB_DRIVER_PING_INTERVAL = 900;
+const WEB_DRIVER_IDLE_TIMEOUT              = 1000;
+const WEB_DRIVER_PING_INTERVAL             = 900;
+const WEB_DRIVER_CONFIGURATION_RETRY_DELAY = 30 * 1000;
+const WEB_DRIVER_CONFIGURATION_RETRIES     = 3;
+const WEB_DRIVER_CONFIGURATION_TIMEOUT     = 9 * 60 * 1000;
+
+
+var requestPromised = denodeify(request);
 
 
 export default class SaucelabsConnector {
@@ -14,6 +24,24 @@ export default class SaucelabsConnector {
         this.accessKey        = accessKey;
         this.tunnelIdentifier = Date.now();
         this.tunnel           = new SauceTunnel(this.username, this.accessKey, this.tunnelIdentifier);
+
+        wd.configureHttp({
+            retryDelay: WEB_DRIVER_CONFIGURATION_RETRY_DELAY,
+            retries:    WEB_DRIVER_CONFIGURATION_RETRIES,
+            timeout:    WEB_DRIVER_CONFIGURATION_TIMEOUT
+        });
+    }
+
+    async _getFreeMachinesCount () {
+        var params = {
+            method: 'GET',
+            url:    ['https://saucelabs.com/rest/v1/users', this.username, 'concurrency'].join('/'),
+            auth:   { user: this.username, pass: this.accessKey }
+        };
+
+        var response = await requestPromised(params);
+
+        return JSON.parse(response.body).concurrency[this.username].remaining.overall;
     }
 
     async startBrowser (browser, url, jobName, timeout = null) {
@@ -74,5 +102,24 @@ export default class SaucelabsConnector {
         var closeTunnel = promisify(this.tunnel.stop.bind(this.tunnel));
 
         await closeTunnel();
+    }
+
+    async waitForFreeMachines (machinesCount, requestInterval, maxAttemptsCount) {
+        var attempts = 0;
+
+        while (attempts < maxAttemptsCount) {
+            var freeMachinesCount = await this._getFreeMachinesCount();
+
+            if (freeMachinesCount >= machinesCount)
+                return;
+
+            process.stdout.write(format('The number of free machines (%d) is less than requested (%d).\n',
+                freeMachinesCount, machinesCount));
+
+            await wait(requestInterval);
+            attempts++;
+        }
+
+        throw new Error('There are no free machines');
     }
 }
