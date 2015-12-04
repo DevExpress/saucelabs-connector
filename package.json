@@ -1,7 +1,17 @@
 {
   "name": "saucelabs-connector",
   "version": "0.0.1",
-  "dependencies": {
+  "description": "Helps connect the local machine to SauceLabs and starts a browser with the specified page url",
+  "author": "Alexander Moskovkin",
+  "contributors": "Georgiy Abbasov",
+  "homepage": "https://github.com/AlexanderMoskovkin/saucelabs-connector/",
+  "bugs": "https://github.com/AlexanderMoskovkin/saucelabs-connector/issues",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AlexanderMoskovkin/saucelabs-connector.git"
+  },
+ "dependencies": {
     "babel-runtime": "^5.8.20",
     "denodeify": "^1.2.1",
     "es6-promise": "^3.0.2",
@@ -18,5 +28,8 @@
     "gulp": "^3.9.0",
     "gulp-babel": "^5.2.0",
     "gulp-eslint": "^1.0.0"
-  }
+  },
+  "files": [
+    "lib"
+  ]
 }
