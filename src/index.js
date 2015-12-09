@@ -32,7 +32,7 @@ export default class SaucelabsConnector {
         });
     }
 
-    async _getFreeMachinesCount () {
+    async _getFreeMachineCount () {
         var params = {
             method: 'GET',
             url:    ['https://saucelabs.com/rest/v1/users', this.username, 'concurrency'].join('/'),
@@ -104,17 +104,17 @@ export default class SaucelabsConnector {
         await closeTunnel();
     }
 
-    async waitForFreeMachines (machinesCount, requestInterval, maxAttemptsCount) {
+    async waitForFreeMachines (machineCount, requestInterval, maxAttemptCount) {
         var attempts = 0;
 
-        while (attempts < maxAttemptsCount) {
-            var freeMachinesCount = await this._getFreeMachinesCount();
+        while (attempts < maxAttemptCount) {
+            var freeMachineCount = await this._getFreeMachineCount();
 
-            if (freeMachinesCount >= machinesCount)
+            if (freeMachineCount >= machineCount)
                 return;
 
             process.stdout.write(format('The number of free machines (%d) is less than requested (%d).\n',
-                freeMachinesCount, machinesCount));
+                freeMachineCount, machineCount));
 
             await wait(requestInterval);
             attempts++;

@@ -1,7 +1,7 @@
 {
   "name": "saucelabs-connector",
   "version": "0.0.1",
-  "description": "Helps connect the local machine to SauceLabs and starts a browser with the specified page url",
+  "description": "Helps connect the local machine to SauceLabs and start a remote browser.",
   "author": "Alexander Moskovkin",
   "contributors": "Georgiy Abbasov",
   "homepage": "https://github.com/AlexanderMoskovkin/saucelabs-connector/",
