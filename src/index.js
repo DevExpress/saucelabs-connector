@@ -65,6 +65,7 @@ export default class SaucelabsConnector {
             name:             jobName,
             platform:         browser.platform,
             browserName:      browser.browserName,
+            version:          browser.version,
             tunnelIdentifier: this.tunnelIdentifier,
             idleTimeout:      WEB_DRIVER_IDLE_TIMEOUT
         };

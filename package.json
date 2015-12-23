@@ -1,6 +1,7 @@
 {
   "name": "saucelabs-connector",
   "version": "0.0.1",
+  "main": "lib/index",
   "description": "Helps connect the local machine to SauceLabs and start a remote browser.",
   "author": "Alexander Moskovkin",
   "contributors": "Georgiy Abbasov",
@@ -11,7 +12,7 @@
     "type": "git",
     "url": "https://github.com/AlexanderMoskovkin/saucelabs-connector.git"
   },
- "dependencies": {
+  "dependencies": {
     "babel-runtime": "^5.8.20",
     "denodeify": "^1.2.1",
     "es6-promise": "^3.0.2",
