@@ -15,7 +15,8 @@ var SauceLabsConnector = require('saucelabs-connector');
 // https://wiki.saucelabs.com/display/DOCS/Platform+Configurator#/
 var browserInfo = {
     platform:    'Windows 10',
-    browserName: 'chrome'
+    browserName: 'chrome',
+    version:     '45.0'
 };
 
 var pageUrl = 'www.example.com';
