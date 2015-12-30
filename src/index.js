@@ -44,7 +44,7 @@ export default class SaucelabsConnector {
         return JSON.parse(response.body).concurrency[this.username].remaining.overall;
     }
 
-    async startBrowser (browser, url, jobName, timeout = null) {
+    async startBrowser (browser, url, { jobName, tags, build } = {}, timeout = null) {
         var webDriver = wd.promiseChainRemote('ondemand.saucelabs.com', 80, this.username, this.accessKey);
 
         var getSessionId  = promisify(webDriver.getSessionId.bind(webDriver));
@@ -53,7 +53,7 @@ export default class SaucelabsConnector {
         webDriver.once('status', () => {
             getSessionId()
                 .then(sid => {
-                    process.stdout.write('Browser started. See https://saucelabs.com/tests/' + sid + '\n');
+                    process.stdout.write(`${browser.browserName} started. See https://saucelabs.com/tests/${sid}\n`);
 
                     // HACK: if the webDriver doesn't get any command within 1000s, it fails
                     // with the timeout error. We should send any command to avoid this.
@@ -63,6 +63,8 @@ export default class SaucelabsConnector {
 
         var initParams = {
             name:             jobName,
+            tags:             tags,
+            build:            build,
             platform:         browser.platform,
             browserName:      browser.browserName,
             version:          browser.version,

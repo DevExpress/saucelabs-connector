@@ -19,8 +19,13 @@ var browserInfo = {
     version:     '45.0'
 };
 
-var pageUrl = 'www.example.com';
-var jobName = 'Sample tests';
+var pageUrl    = 'www.example.com';
+var jobTimeout = 60; // in seconds
+var jobOptions = {
+    jobName: 'Sample tests',
+    build:   'build-1234',
+    tags:    ['tag1', 'tag2', 'tag3']
+};
 
 var saucelabsConnector = new SauceLabsConnector('SAUCELABS_USERNAME', 'SAUCELABS_ACCESS_KEY');
 var saucelabsBrowser   = null;
@@ -37,8 +42,9 @@ saucelabsConnector
         return saucelabsConnector.waitForFreeMachines(machineCount, requestInterval, maxAttemptCount);
     })
     .then(function () {
-        // Starts a remote browser on SauceLabs with the specified url
-        return saucelabsConnector.startBrowser(browserInfo, pageUrl, jobName);
+        // Starts a remote browser on SauceLabs with the specified url.
+        // jobOptions and jobTimeout are optional arguments.
+        return saucelabsConnector.startBrowser(browserInfo, pageUrl, jobOptions, jobTimeout);
     })
     .then(function (browser) {
         saucelabsBrowser = browser;
