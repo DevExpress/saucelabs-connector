@@ -1,12 +1,16 @@
+import Promise from 'pinkie';
+import promisify from 'pify';
+import request from 'request';
 import SauceTunnel from 'sauce-tunnel';
 import wd from 'wd';
-import promisify from 'es6-promisify';
-import { Promise } from 'es6-promise';
-import request from 'request';
-import denodeify from 'denodeify';
 import { format } from 'util';
 import wait from './utils/wait';
+import SauceStorage from './sauce-storage';
+import { toAbsPath } from 'read-file-relative';
 
+
+const PRERUN_SCRIPT_DIR_PATH                        = toAbsPath('./files/');
+const DISABLE_COMPATIBILITY_MODE_IE_SCRIPT_FILENAME = 'disable-intranet-compatibility-mode-in-ie.bat';
 
 const WEB_DRIVER_IDLE_TIMEOUT              = 1000;
 const WEB_DRIVER_PING_INTERVAL             = 900;
@@ -15,7 +19,7 @@ const WEB_DRIVER_CONFIGURATION_RETRIES     = 3;
 const WEB_DRIVER_CONFIGURATION_TIMEOUT     = 9 * 60 * 1000;
 
 
-var requestPromised = denodeify(request);
+var requestPromised = promisify(request, Promise);
 
 
 export default class SaucelabsConnector {
@@ -24,6 +28,7 @@ export default class SaucelabsConnector {
         this.accessKey        = accessKey;
         this.tunnelIdentifier = Date.now();
         this.tunnel           = new SauceTunnel(this.username, this.accessKey, this.tunnelIdentifier);
+        this.sauceStorage     = new SauceStorage(this.username, this.accessKey);
 
         wd.configureHttp({
             retryDelay: WEB_DRIVER_CONFIGURATION_RETRY_DELAY,
@@ -47,7 +52,7 @@ export default class SaucelabsConnector {
     async startBrowser (browser, url, { jobName, tags, build } = {}, timeout = null) {
         var webDriver = wd.promiseChainRemote('ondemand.saucelabs.com', 80, this.username, this.accessKey);
 
-        var getSessionId  = promisify(webDriver.getSessionId.bind(webDriver));
+        var getSessionId  = promisify(webDriver.getSessionId.bind(webDriver), Promise);
         var pingWebDriver = () => webDriver.elementById('x');
 
         webDriver.once('status', () => {
@@ -74,6 +79,18 @@ export default class SaucelabsConnector {
 
         if (timeout)
             initParams.maxDuration = timeout;
+
+
+        // NOTE: If IE11 is used, the "Display intranet sites in Compatibility View" option should be disabled.
+        // We do this this via the 'prerun' parameter, which should run our script on the Sauce Labs side,
+        // before the browser starts.
+        if (browser.browserName.toLowerCase() === 'internet explorer' && /11(\.\d*)?$/.test(browser.version)) {
+            // NOTE: We should upload the script to the sauce storage if it's not there yet.
+            if (await !this.sauceStorage.isFileAvailable(DISABLE_COMPATIBILITY_MODE_IE_SCRIPT_FILENAME))
+                await this.sauceStorage.uploadFile(PRERUN_SCRIPT_DIR_PATH, DISABLE_COMPATIBILITY_MODE_IE_SCRIPT_FILENAME);
+
+            initParams.prerun = `sauce-storage:${DISABLE_COMPATIBILITY_MODE_IE_SCRIPT_FILENAME}`;
+        }
 
         await webDriver
             .init(initParams)
@@ -102,7 +119,7 @@ export default class SaucelabsConnector {
     }
 
     async disconnect () {
-        var closeTunnel = promisify(this.tunnel.stop.bind(this.tunnel));
+        var closeTunnel = promisify(this.tunnel.stop.bind(this.tunnel), Promise);
 
         await closeTunnel();
     }
