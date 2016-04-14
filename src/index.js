@@ -9,7 +9,7 @@ import SauceStorage from './sauce-storage';
 import { toAbsPath } from 'read-file-relative';
 
 
-const PRERUN_SCRIPT_DIR_PATH                        = toAbsPath('./files/');
+const PRERUN_SCRIPT_DIR_PATH                        = toAbsPath('./prerun/');
 const DISABLE_COMPATIBILITY_MODE_IE_SCRIPT_FILENAME = 'disable-intranet-compatibility-mode-in-ie.bat';
 
 const WEB_DRIVER_IDLE_TIMEOUT              = 1000;
@@ -86,7 +86,7 @@ export default class SaucelabsConnector {
         // before the browser starts.
         if (browser.browserName.toLowerCase() === 'internet explorer' && /11(\.\d*)?$/.test(browser.version)) {
             // NOTE: We should upload the script to the sauce storage if it's not there yet.
-            if (await !this.sauceStorage.isFileAvailable(DISABLE_COMPATIBILITY_MODE_IE_SCRIPT_FILENAME))
+            if (!await this.sauceStorage.isFileAvailable(DISABLE_COMPATIBILITY_MODE_IE_SCRIPT_FILENAME))
                 await this.sauceStorage.uploadFile(PRERUN_SCRIPT_DIR_PATH, DISABLE_COMPATIBILITY_MODE_IE_SCRIPT_FILENAME);
 
             initParams.prerun = `sauce-storage:${DISABLE_COMPATIBILITY_MODE_IE_SCRIPT_FILENAME}`;
