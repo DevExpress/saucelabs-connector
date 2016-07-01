@@ -1,6 +1,6 @@
 {
   "name": "saucelabs-connector",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "main": "lib/index",
   "description": "Helps connect the local machine to SauceLabs and start a remote browser.",
   "author": "Alexander Moskovkin",
@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "babel-runtime": "^5.8.20",
+    "lodash": "^4.13.1",
     "pify": "^2.3.0",
     "pinkie": "^2.0.4",
     "read-file-relative": "^1.2.0",
