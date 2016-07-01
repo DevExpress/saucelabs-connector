@@ -4,6 +4,7 @@ import request from 'request';
 import SauceTunnel from 'sauce-tunnel';
 import wd from 'wd';
 import { format } from 'util';
+import { assign } from 'lodash';
 import wait from './utils/wait';
 import SauceStorage from './sauce-storage';
 import { toAbsPath } from 'read-file-relative';
@@ -13,7 +14,7 @@ const PRERUN_SCRIPT_DIR_PATH                        = toAbsPath('./prerun/');
 const DISABLE_COMPATIBILITY_MODE_IE_SCRIPT_FILENAME = 'disable-intranet-compatibility-mode-in-ie.bat';
 
 const WEB_DRIVER_IDLE_TIMEOUT              = 1000;
-const WEB_DRIVER_PING_INTERVAL             = 900;
+const WEB_DRIVER_PING_INTERVAL             = 5 * 60 * 1000;
 const WEB_DRIVER_CONFIGURATION_RETRY_DELAY = 30 * 1000;
 const WEB_DRIVER_CONFIGURATION_RETRIES     = 3;
 const WEB_DRIVER_CONFIGURATION_TIMEOUT     = 9 * 60 * 1000;
@@ -23,7 +24,7 @@ var requestPromised = promisify(request, Promise);
 
 
 export default class SaucelabsConnector {
-    constructor (username, accessKey) {
+    constructor (username, accessKey, options = { showBrowserStartMessage: true }) {
         this.username         = username;
         this.accessKey        = accessKey;
         this.tunnelIdentifier = Date.now();
@@ -35,6 +36,10 @@ export default class SaucelabsConnector {
             retries:    WEB_DRIVER_CONFIGURATION_RETRIES,
             timeout:    WEB_DRIVER_CONFIGURATION_TIMEOUT
         });
+
+        this.options = {
+            showBrowserStartMessage: options.showBrowserStartMessage
+        };
     }
 
     async _getFreeMachineCount () {
@@ -49,33 +54,38 @@ export default class SaucelabsConnector {
         return JSON.parse(response.body).concurrency[this.username].remaining.overall;
     }
 
+    async getSessionUrl (browser) {
+        var sessionId = await browser.getSessionId();
+
+        return `https://saucelabs.com/tests/${sessionId}`;
+    }
+
     async startBrowser (browser, url, { jobName, tags, build } = {}, timeout = null) {
         var webDriver = wd.promiseChainRemote('ondemand.saucelabs.com', 80, this.username, this.accessKey);
 
-        var getSessionId  = promisify(webDriver.getSessionId.bind(webDriver), Promise);
-        var pingWebDriver = () => webDriver.elementById('x');
+        var pingWebDriver = () => webDriver.eval('');
 
         webDriver.once('status', () => {
-            getSessionId()
-                .then(sid => {
-                    process.stdout.write(`${browser.browserName} started. See https://saucelabs.com/tests/${sid}\n`);
+            // HACK: if the webDriver doesn't get any command within 1000s, it fails
+            // with the timeout error. We should send any command to avoid this.
+            webDriver.pingIntervalId = setInterval(pingWebDriver, WEB_DRIVER_PING_INTERVAL);
 
-                    // HACK: if the webDriver doesn't get any command within 1000s, it fails
-                    // with the timeout error. We should send any command to avoid this.
-                    webDriver.pingIntervalId = setInterval(pingWebDriver, WEB_DRIVER_PING_INTERVAL);
-                });
+            if (this.options.showBrowserStartMessage) {
+                this
+                    .getSessionUrl(webDriver)
+                    .then(sessionUrl => process.stdout.write(`${browser.browserName} started. See ${sessionUrl}\n`));
+            }
         });
 
         var initParams = {
             name:             jobName,
             tags:             tags,
             build:            build,
-            platform:         browser.platform,
-            browserName:      browser.browserName,
-            version:          browser.version,
             tunnelIdentifier: this.tunnelIdentifier,
             idleTimeout:      WEB_DRIVER_IDLE_TIMEOUT
         };
+
+        assign(initParams, browser);
 
         if (timeout)
             initParams.maxDuration = timeout;
