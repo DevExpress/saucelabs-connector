@@ -73,7 +73,8 @@
     "no-multi-spaces": [2, {
       "exceptions": {
         "VariableDeclarator": true,
-        "AssignmentExpression": true
+        "AssignmentExpression": true,
+        "AssignmentPattern": true
       }
     }],
     "radix": 2,

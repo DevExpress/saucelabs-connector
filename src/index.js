@@ -3,7 +3,6 @@ import promisify from 'pify';
 import request from 'request';
 import SauceTunnel from 'sauce-tunnel';
 import wd from 'wd';
-import { format } from 'util';
 import { assign } from 'lodash';
 import wait from './utils/wait';
 import SauceStorage from './sauce-storage';
@@ -19,17 +18,35 @@ const WEB_DRIVER_CONFIGURATION_RETRY_DELAY = 30 * 1000;
 const WEB_DRIVER_CONFIGURATION_RETRIES     = 3;
 const WEB_DRIVER_CONFIGURATION_TIMEOUT     = 9 * 60 * 1000;
 
+// NOTE: When using Appium on Android devices, the device browser navigates to 'https://google.com' after being started.
+// So we need to route traffic directly to Google servers to avoid re-signing it with Saucelabs SSL certificates.
+// https://support.saucelabs.com/customer/portal/articles/2005359-some-https-sites-don-t-work-correctly-under-sauce-connect
+const DEFAULT_DIRECT_DOMAINS               = ['*.google.com', '*.gstatic.com', '*.googleapis.com'];
+
 
 var requestPromised = promisify(request, Promise);
 
 
 export default class SaucelabsConnector {
-    constructor (username, accessKey, options = { showBrowserStartMessage: true }) {
+    constructor (username, accessKey, options = {}) {
         this.username         = username;
         this.accessKey        = accessKey;
         this.tunnelIdentifier = Date.now();
-        this.tunnel           = new SauceTunnel(this.username, this.accessKey, this.tunnelIdentifier);
-        this.sauceStorage     = new SauceStorage(this.username, this.accessKey);
+
+        var {
+            connectorLogging = true,
+            directDomains    = DEFAULT_DIRECT_DOMAINS,
+            noSSLBumpDomains = ''
+        } = options;
+
+        var extraTunnelOptions = [].concat(
+            directDomains ? ['--direct-domains', directDomains.join(',')] : [],
+            noSSLBumpDomains ? ['--no-ssl-bump-domains', noSSLBumpDomains.join(',')] : []
+        );
+
+        this.tunnel = new SauceTunnel(this.username, this.accessKey, this.tunnelIdentifier, true, extraTunnelOptions);
+
+        this.sauceStorage = new SauceStorage(this.username, this.accessKey);
 
         wd.configureHttp({
             retryDelay: WEB_DRIVER_CONFIGURATION_RETRY_DELAY,
@@ -37,9 +54,12 @@ export default class SaucelabsConnector {
             timeout:    WEB_DRIVER_CONFIGURATION_TIMEOUT
         });
 
-        this.options = {
-            showBrowserStartMessage: options.showBrowserStartMessage
-        };
+        this.options = { connectorLogging };
+    }
+
+    _log (message) {
+        if (this.options.connectorLogging)
+            process.stdout.write(message + '\n');
     }
 
     async _getFreeMachineCount () {
@@ -70,10 +90,10 @@ export default class SaucelabsConnector {
             // with the timeout error. We should send any command to avoid this.
             webDriver.pingIntervalId = setInterval(pingWebDriver, WEB_DRIVER_PING_INTERVAL);
 
-            if (this.options.showBrowserStartMessage) {
+            if (this.options.connectorLogging) {
                 this
                     .getSessionUrl(webDriver)
-                    .then(sessionUrl => process.stdout.write(`${browser.browserName} started. See ${sessionUrl}\n`));
+                    .then(sessionUrl => this._log(`${browser.browserName} started. See ${sessionUrl}`));
             }
         });
 
@@ -143,8 +163,7 @@ export default class SaucelabsConnector {
             if (freeMachineCount >= machineCount)
                 return;
 
-            process.stdout.write(format('The number of free machines (%d) is less than requested (%d).\n',
-                freeMachineCount, machineCount));
+            this._log(`The number of free machines (${freeMachineCount}) is less than requested (${machineCount}).`);
 
             await wait(requestInterval);
             attempts++;
