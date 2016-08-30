@@ -143,7 +143,7 @@ export default class SaucelabsConnector {
                 if (result)
                     resolve();
                 else
-                    reject('Failed to open the tunnel.');
+                    reject(new Error('Failed to open the tunnel.'));
             });
         });
     }

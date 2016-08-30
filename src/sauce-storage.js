@@ -21,12 +21,14 @@ export default class SauceStorage {
         var body       = result.body;
 
         if (statusCode !== 200) {
-            throw [
+            var message = [
                 'Unexpected response from Sauce Labs.',
                 params.method + ' ' + params.url,
                 'Response status: ' + statusCode,
                 'Body: ' + JSON.stringify(body)
             ].join('\n');
+
+            throw new Error(message);
         }
 
         return body;
