@@ -7,6 +7,7 @@ import { assign } from 'lodash';
 import wait from './utils/wait';
 import SauceStorage from './sauce-storage';
 import { toAbsPath } from 'read-file-relative';
+import OS from 'os-family';
 
 
 const PRERUN_SCRIPT_DIR_PATH                        = toAbsPath('./prerun/');
@@ -21,7 +22,7 @@ const WEB_DRIVER_CONFIGURATION_TIMEOUT     = 9 * 60 * 1000;
 // NOTE: When using Appium on Android devices, the device browser navigates to 'https://google.com' after being started.
 // So we need to route traffic directly to Google servers to avoid re-signing it with Saucelabs SSL certificates.
 // https://support.saucelabs.com/customer/portal/articles/2005359-some-https-sites-don-t-work-correctly-under-sauce-connect
-const DEFAULT_DIRECT_DOMAINS               = ['*.google.com', '*.gstatic.com', '*.googleapis.com'];
+const DEFAULT_DIRECT_DOMAINS = ['*.google.com', '*.gstatic.com', '*.googleapis.com'];
 
 
 var requestPromised = promisify(request, Promise);
@@ -35,13 +36,15 @@ export default class SaucelabsConnector {
 
         var {
             connectorLogging = true,
+            tunnelLogging    = false,
             directDomains    = DEFAULT_DIRECT_DOMAINS,
             noSSLBumpDomains = ''
         } = options;
 
         var extraTunnelOptions = [].concat(
             directDomains ? ['--direct-domains', directDomains.join(',')] : [],
-            noSSLBumpDomains ? ['--no-ssl-bump-domains', noSSLBumpDomains.join(',')] : []
+            noSSLBumpDomains ? ['--no-ssl-bump-domains', noSSLBumpDomains.join(',')] : [],
+            tunnelLogging ? [] : ['--logfile', OS.win ? 'NUL' : '/dev/null']
         );
 
         this.tunnel = new SauceTunnel(this.username, this.accessKey, this.tunnelIdentifier, true, extraTunnelOptions);
