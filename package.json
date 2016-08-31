@@ -15,6 +15,7 @@
   "dependencies": {
     "babel-runtime": "^5.8.20",
     "lodash": "^4.13.1",
+    "os-family": "^1.0.0",
     "pify": "^2.3.0",
     "pinkie": "^2.0.4",
     "read-file-relative": "^1.2.0",
