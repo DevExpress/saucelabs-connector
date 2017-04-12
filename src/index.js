@@ -83,7 +83,7 @@ export default class SaucelabsConnector {
         return `https://saucelabs.com/tests/${sessionId}`;
     }
 
-    async startBrowser (browser, url, { jobName, tags, build } = {}, timeout = null) {
+    async startBrowser (browser, url, { jobName, tags, build } = {}, { timeout = null } ) {
         var webDriver = wd.promiseChainRemote('ondemand.saucelabs.com', 80, this.username, this.accessKey);
 
         var pingWebDriver = () => webDriver.eval('');
