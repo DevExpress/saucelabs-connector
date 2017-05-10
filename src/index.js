@@ -1,13 +1,12 @@
 import Promise from 'pinkie';
 import promisify from 'pify';
 import request from 'request';
-import SauceTunnel from 'sauce-tunnel';
 import wd from 'wd';
 import { assign } from 'lodash';
 import wait from './utils/wait';
-import SauceStorage from './sauce-storage';
 import { toAbsPath } from 'read-file-relative';
-import OS from 'os-family';
+import sauceConnectLauncher from 'sauce-connect-launcher';
+import SauceStorage from './sauce-storage';
 
 
 const PRERUN_SCRIPT_DIR_PATH                        = toAbsPath('./prerun/');
@@ -25,8 +24,26 @@ const WEB_DRIVER_CONFIGURATION_TIMEOUT     = 9 * 60 * 1000;
 const DEFAULT_DIRECT_DOMAINS = ['*.google.com', '*.gstatic.com', '*.googleapis.com'];
 
 
-var requestPromised = promisify(request, Promise);
+const requestPromised = promisify(request, Promise);
 
+function createSauceConnectProcess (options) {
+    return new Promise((resolve, reject) => {
+        sauceConnectLauncher(options, (err, process) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+
+            resolve(process);
+        });
+    });
+}
+
+function disposeSauceConnectProcess (process) {
+    return new Promise(resolve => {
+        process.close(resolve);
+    });
+}
 
 export default class SaucelabsConnector {
     constructor (username, accessKey, options = {}) {
@@ -38,16 +55,21 @@ export default class SaucelabsConnector {
             connectorLogging = true,
             tunnelLogging    = false,
             directDomains    = DEFAULT_DIRECT_DOMAINS,
-            noSSLBumpDomains = ''
+            noSSLBumpDomains = []
         } = options;
 
-        var extraTunnelOptions = [].concat(
-            directDomains ? ['--direct-domains', directDomains.join(',')] : [],
-            noSSLBumpDomains ? ['--no-ssl-bump-domains', noSSLBumpDomains.join(',')] : [],
-            tunnelLogging ? [] : ['--logfile', OS.win ? 'NUL' : '/dev/null']
-        );
+        this.sauceConnectOptions = {
+            username:         this.username,
+            accessKey:        this.accessKey,
+            tunnelIdentifier: this.tunnelIdentifier,
+            directDomains:    directDomains.join(','),
+            logfile:          tunnelLogging ? 'sc_' + this.tunnelIdentifier + '.log' : null
+        };
 
-        this.tunnel = new SauceTunnel(this.username, this.accessKey, this.tunnelIdentifier, true, extraTunnelOptions);
+        if (noSSLBumpDomains.length)
+            this.sauceConnectOptions.noSslBumpDomains = noSSLBumpDomains.join(',');
+
+        this.sauceConnectProcess = null;
 
         this.sauceStorage = new SauceStorage(this.username, this.accessKey);
 
@@ -139,22 +161,12 @@ export default class SaucelabsConnector {
             .quit()
             .sauceJobStatus();
     }
-
-    connect () {
-        return new Promise((resolve, reject) => {
-            this.tunnel.openTunnel(result => {
-                if (result)
-                    resolve();
-                else
-                    reject(new Error('Failed to open the tunnel.'));
-            });
-        });
+    async connect () {
+        this.sauceConnectProcess = await createSauceConnectProcess(this.sauceConnectOptions);
     }
 
     async disconnect () {
-        var closeTunnel = promisify(this.tunnel.stop.bind(this.tunnel), Promise);
-
-        await closeTunnel();
+        await disposeSauceConnectProcess(this.sauceConnectProcess);
     }
 
     async waitForFreeMachines (machineCount, requestInterval, maxAttemptCount) {
