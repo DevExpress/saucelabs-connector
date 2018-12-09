@@ -102,7 +102,7 @@ export default class SaucelabsConnector {
     async getSessionUrl (browser) {
         var sessionId = await browser.getSessionId();
 
-        return `https://saucelabs.com/tests/${sessionId}`;
+        return `https://app.saucelabs.com/tests/${sessionId}`;
     }
 
     async startBrowser (browser, url, { jobName, tags, build } = {}, timeout = null) {
