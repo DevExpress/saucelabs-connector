@@ -7,6 +7,7 @@ import wait from './utils/wait';
 import { toAbsPath } from 'read-file-relative';
 import sauceConnectLauncher from 'sauce-connect-launcher';
 import SauceStorage from './sauce-storage';
+import { SAUCE_API_HOST } from './sauce-host';
 
 
 const PRERUN_SCRIPT_DIR_PATH                        = toAbsPath('./prerun/');
@@ -22,7 +23,6 @@ const WEB_DRIVER_CONFIGURATION_TIMEOUT     = 9 * 60 * 1000;
 // So we need to route traffic directly to Google servers to avoid re-signing it with Saucelabs SSL certificates.
 // https://support.saucelabs.com/customer/portal/articles/2005359-some-https-sites-don-t-work-correctly-under-sauce-connect
 const DEFAULT_DIRECT_DOMAINS = ['*.google.com', '*.gstatic.com', '*.googleapis.com'];
-
 
 const requestPromised = promisify(request, Promise);
 
@@ -90,7 +90,7 @@ export default class SaucelabsConnector {
     async _getFreeMachineCount () {
         var params = {
             method: 'GET',
-            url:    ['https://saucelabs.com/rest/v1/users', this.username, 'concurrency'].join('/'),
+            url:    [`https://${SAUCE_API_HOST}/rest/v1/users`, this.username, 'concurrency'].join('/'),
             auth:   { user: this.username, pass: this.accessKey }
         };
 
@@ -102,11 +102,11 @@ export default class SaucelabsConnector {
     async getSessionUrl (browser) {
         var sessionId = await browser.getSessionId();
 
-        return `https://app.saucelabs.com/tests/${sessionId}`;
+        return `https://app.${SAUCE_API_HOST}/tests/${sessionId}`;
     }
 
     async startBrowser (browser, url, { jobName, tags, build } = {}, timeout = null) {
-        var webDriver = wd.promiseChainRemote('ondemand.saucelabs.com', 80, this.username, this.accessKey);
+        var webDriver = wd.promiseChainRemote(`ondemand.${SAUCE_API_HOST}`, 80, this.username, this.accessKey);
 
         var pingWebDriver = () => webDriver.eval('');
 

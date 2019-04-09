@@ -2,11 +2,11 @@
 
 Helps connect the local machine to SauceLabs and start a remote browser.
 
-##Install
+## Install
 
 `$ npm install saucelabs-connector`
 
-##Usage
+## Usage
 ```js
 
 var SauceLabsConnector = require('saucelabs-connector');
@@ -57,3 +57,14 @@ saucelabsConnector
     .then(function () {
         return saucelabsConnector.disconnect();
     });
+```
+
+## Additional Configuration
+
+You can select the data center you want to connect to, by setting the environment variable `SAUCE_API_HOST` 
+to the respective data center's host: 
+
+```bash
+export SAUCE_API_HOST=saucelabs.com # for us-west-1, default
+export SAUCE_API_HOST=eu-central-1.saucelabs.com # for eu-central-1
+```

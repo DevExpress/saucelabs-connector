@@ -2,6 +2,7 @@ import Promise from 'pinkie';
 import request from 'request';
 import promisify from 'pify';
 import fs from 'fs';
+import { SAUCE_API_HOST } from './sauce-host';
 
 
 var requestPromised = promisify(request, Promise);
@@ -37,7 +38,7 @@ export default class SauceStorage {
     async isFileAvailable (fileName) {
         var params = {
             method:  'GET',
-            uri:     `https://saucelabs.com/rest/v1/storage/${this.user}`,
+            uri:     `https://${SAUCE_API_HOST}/rest/v1/storage/${this.user}`,
             headers: { 'Content-Type': 'application/json' },
             auth:    { user: this.user, pass: this.pass }
         };
@@ -55,7 +56,7 @@ export default class SauceStorage {
 
         var params = {
             method:  'POST',
-            uri:     `https://saucelabs.com/rest/v1/storage/${this.user}/${fileName}?overwrite=true`,
+            uri:     `https://${SAUCE_API_HOST}/rest/v1/storage/${this.user}/${fileName}?overwrite=true`,
             headers: { 'Content-Type': 'application/octet-stream' },
             auth:    { user: this.user, pass: this.pass },
             body:    buffer.toString('binary', 0, buffer.length)
