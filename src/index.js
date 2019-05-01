@@ -30,6 +30,7 @@ function createSauceConnectProcess (options) {
     return new Promise((resolve, reject) => {
         if (options.useExistingTunnel){
             resolve();
+            return;
         }
         sauceConnectLauncher(options, (err, process) => {
             if (err) {
