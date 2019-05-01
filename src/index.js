@@ -27,6 +27,9 @@ const DEFAULT_DIRECT_DOMAINS = ['*.google.com', '*.gstatic.com', '*.googleapis.c
 const requestPromised = promisify(request, Promise);
 
 function createSauceConnectProcess (options) {
+    if (options.useExistingTunnel){
+        return;
+    }
     return new Promise((resolve, reject) => {
         sauceConnectLauncher(options, (err, process) => {
             if (err) {
@@ -46,10 +49,11 @@ function disposeSauceConnectProcess (process) {
 }
 
 export default class SaucelabsConnector {
-    constructor (username, accessKey, options = {}) {
+    constructor (username, accessKey, tunnelIdentifier, options = {}) {
         this.username         = username;
         this.accessKey        = accessKey;
-        this.tunnelIdentifier = Date.now();
+        this.useExistingTunnel = (!tunnelIdentifier);
+        this.tunnelIdentifier = tunnelIdentifier || Date.now();
 
         var {
             connectorLogging = true,
@@ -62,6 +66,7 @@ export default class SaucelabsConnector {
             username:         this.username,
             accessKey:        this.accessKey,
             tunnelIdentifier: this.tunnelIdentifier,
+            useExistingTunnel: this.useExistingTunnel,
             directDomains:    directDomains.join(','),
             logfile:          tunnelLogging ? 'sc_' + this.tunnelIdentifier + '.log' : null
         };
