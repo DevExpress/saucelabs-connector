@@ -27,10 +27,10 @@ const DEFAULT_DIRECT_DOMAINS = ['*.google.com', '*.gstatic.com', '*.googleapis.c
 const requestPromised = promisify(request, Promise);
 
 function createSauceConnectProcess (options) {
-    if (options.useExistingTunnel){
-        return;
-    }
     return new Promise((resolve, reject) => {
+        if (options.useExistingTunnel){
+            resolve();
+        }
         sauceConnectLauncher(options, (err, process) => {
             if (err) {
                 reject(err);
