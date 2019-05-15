@@ -105,7 +105,7 @@ export default class SaucelabsConnector {
         return `https://app.${SAUCE_API_HOST}/tests/${sessionId}`;
     }
 
-    async startBrowser (browser, url, { jobName, tags, build } = {}, timeout = null) {
+    async startBrowser (browser, url, { jobName, tags, build, extendedDebugging } = {}, timeout = null) {
         var webDriver = wd.promiseChainRemote(`ondemand.${SAUCE_API_HOST}`, 80, this.username, this.accessKey);
 
         var pingWebDriver = () => webDriver.eval('');
@@ -123,11 +123,12 @@ export default class SaucelabsConnector {
         });
 
         var initParams = {
-            name:             jobName,
-            tags:             tags,
-            build:            build,
-            tunnelIdentifier: this.tunnelIdentifier,
-            idleTimeout:      WEB_DRIVER_IDLE_TIMEOUT
+            name:              jobName,
+            tags:              tags,
+            build:             build,
+            extendedDebugging: extendedDebugging,
+            tunnelIdentifier:  this.tunnelIdentifier,
+            idleTimeout:       WEB_DRIVER_IDLE_TIMEOUT            
         };
 
         assign(initParams, browser);
