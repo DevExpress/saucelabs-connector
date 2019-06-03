@@ -51,23 +51,12 @@ export default class SaucelabsConnector {
         this.accessKey        = accessKey;
         this.tunnelIdentifier = Date.now();
 
-        var {
-            connectorLogging = true,
-            tunnelLogging    = false,
-            directDomains    = DEFAULT_DIRECT_DOMAINS,
-            noSSLBumpDomains = []
-        } = options;
-
-        this.sauceConnectOptions = {
-            username:         this.username,
-            accessKey:        this.accessKey,
-            tunnelIdentifier: this.tunnelIdentifier,
-            directDomains:    directDomains.join(','),
-            logfile:          tunnelLogging ? 'sc_' + this.tunnelIdentifier + '.log' : null
-        };
-
-        if (noSSLBumpDomains.length)
-            this.sauceConnectOptions.noSslBumpDomains = noSSLBumpDomains.join(',');
+        this.sauceConnectOptions = options;
+        this.sauceConnectOptions['directDomains'] = this.sauceConnectOptions['directDomains'] || DEFAULT_DIRECT_DOMAINS;
+        this.sauceConnectOptions['connectorLogging'] = this.sauceConnectOptions['connectorLogging'] || true;
+        this.sauceConnectOptions['tunnelIdentifier'] = this.sauceConnectOptions['tunnelIdentifier'] || this.tunnelIdentifier;
+        this.sauceConnectOptions['tunnelLogging'] = this.sauceConnectOptions['tunnelLogging'] || false;
+        this.sauceConnectOptions['logfile'] = this.sauceConnectOptions['tunnelLogging'] ? this.sauceConnectOptions['logfile'] || 'sc_' + this.tunnelIdentifier + '.log' : null;
 
         this.sauceConnectProcess = null;
 
@@ -79,7 +68,7 @@ export default class SaucelabsConnector {
             timeout:    WEB_DRIVER_CONFIGURATION_TIMEOUT
         });
 
-        this.options = { connectorLogging };
+        this.options = { connectorLogging: this.sauceConnectOptions['connectorLogging'] };
     }
 
     _log (message) {
