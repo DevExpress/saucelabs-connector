@@ -53,9 +53,7 @@ export default class SaucelabsConnector {
 
         this.sauceConnectOptions = options;
         this.sauceConnectOptions['directDomains'] = this.sauceConnectOptions['directDomains'] || DEFAULT_DIRECT_DOMAINS;
-        this.sauceConnectOptions['connectorLogging'] = this.sauceConnectOptions['connectorLogging'] || true;
         this.sauceConnectOptions['tunnelIdentifier'] = this.sauceConnectOptions['tunnelIdentifier'] || this.tunnelIdentifier;
-        this.sauceConnectOptions['tunnelLogging'] = this.sauceConnectOptions['tunnelLogging'] || false;
         this.sauceConnectOptions['logfile'] = this.sauceConnectOptions['tunnelLogging'] ? this.sauceConnectOptions['logfile'] || 'sc_' + this.tunnelIdentifier + '.log' : null;
 
         this.sauceConnectProcess = null;
