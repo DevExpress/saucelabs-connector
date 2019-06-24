@@ -12,6 +12,9 @@
     "type": "git",
     "url": "https://github.com/AlexanderMoskovkin/saucelabs-connector.git"
   },
+  "scripts": {
+    "test": "gulp lint"
+  },
   "dependencies": {
     "babel-runtime": "^5.8.20",
     "lodash": "^4.13.1",
