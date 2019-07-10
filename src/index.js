@@ -2,7 +2,7 @@ import Promise from 'pinkie';
 import promisify from 'pify';
 import request from 'request';
 import wd from 'wd';
-import { assign } from 'lodash';
+import { assign, omit } from 'lodash';
 import wait from './utils/wait';
 import { toAbsPath } from 'read-file-relative';
 import sauceConnectLauncher from 'sauce-connect-launcher';
@@ -55,7 +55,8 @@ export default class SaucelabsConnector {
             connectorLogging = true,
             tunnelLogging    = false,
             directDomains    = DEFAULT_DIRECT_DOMAINS,
-            noSSLBumpDomains = []
+            noSSLBumpDomains = [],
+            proxy
         } = options;
 
         this.sauceConnectOptions = {
@@ -65,6 +66,17 @@ export default class SaucelabsConnector {
             directDomains:    directDomains.join(','),
             logfile:          tunnelLogging ? 'sc_' + this.tunnelIdentifier + '.log' : null
         };
+
+        const additionalOptions = omit(options, ['connectorLogging', 'tunnelLogging', 'directDomains', 'noSSLBumpDomains', 'proxy']);
+
+        Object.keys(additionalOptions).forEach(option => {
+            this.sauceConnectOptions[option] = additionalOptions[option];
+        });
+
+        if (proxy) {
+            this.sauceConnectOptions.proxy = proxy;
+            this.sauceConnectOptions.proxyTunnel = true;
+        }
 
         if (noSSLBumpDomains.length)
             this.sauceConnectOptions.noSslBumpDomains = noSSLBumpDomains.join(',');
