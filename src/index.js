@@ -1,8 +1,6 @@
-import Promise from 'pinkie';
-import promisify from 'pify';
+import { promisify } from 'util';
 import request from 'request';
 import wd from 'wd';
-import { assign } from 'lodash';
 import wait from './utils/wait';
 import { toAbsPath } from 'read-file-relative';
 import sauceConnectLauncher from 'sauce-connect-launcher';
@@ -47,27 +45,37 @@ function disposeSauceConnectProcess (process) {
 
 export default class SaucelabsConnector {
     constructor (username, accessKey, options = {}) {
-        this.username         = username;
-        this.accessKey        = accessKey;
-        this.tunnelIdentifier = Date.now();
-
-        var {
+        const {
             connectorLogging = true,
             tunnelLogging    = false,
+            tunnelIdentifier = Date.now(),
+            logfile          = 'sc_' + tunnelIdentifier + '.log',
             directDomains    = DEFAULT_DIRECT_DOMAINS,
-            noSSLBumpDomains = []
+            noSSLBumpDomains = [],
+
+            ...sauceConnectOptions
         } = options;
 
+        this.username         = username;
+        this.accessKey        = accessKey;
+        this.tunnelIdentifier = tunnelIdentifier;
+
         this.sauceConnectOptions = {
+            ...sauceConnectOptions,
+
             username:         this.username,
             accessKey:        this.accessKey,
             tunnelIdentifier: this.tunnelIdentifier,
-            directDomains:    directDomains.join(','),
-            logfile:          tunnelLogging ? 'sc_' + this.tunnelIdentifier + '.log' : null
-        };
+            logfile:          tunnelLogging ? logfile : null,
 
-        if (noSSLBumpDomains.length)
-            this.sauceConnectOptions.noSslBumpDomains = noSSLBumpDomains.join(',');
+            ...noSSLBumpDomains.length && {
+                noSSLBumpDomains: noSSLBumpDomains.join(',')
+            },
+
+            ...directDomains.length && {
+                directDomains: directDomains.join(',')
+            }
+        };
 
         this.sauceConnectProcess = null;
 
@@ -105,7 +113,9 @@ export default class SaucelabsConnector {
         return `https://app.${SAUCE_API_HOST}/tests/${sessionId}`;
     }
 
-    async startBrowser (browser, url, { jobName, tags, build } = {}, timeout = null) {
+    async startBrowser (browser, url, jobOptions = {}, timeout = null) {
+        jobOptions = { ...jobOptions, ...browser };
+
         var webDriver = wd.promiseChainRemote(`ondemand.${SAUCE_API_HOST}`, 80, this.username, this.accessKey);
 
         var pingWebDriver = () => webDriver.eval('');
@@ -122,19 +132,26 @@ export default class SaucelabsConnector {
             }
         });
 
+        const {
+            jobName          = jobOptions.name,
+            tunnelIdentifier = this.tunnelIdentifier,
+            idleTimeout      = WEB_DRIVER_IDLE_TIMEOUT,
+
+            ...additionalOptions
+        } = jobOptions;
+
         var initParams = {
-            name:             jobName,
-            tags:             tags,
-            build:            build,
-            tunnelIdentifier: this.tunnelIdentifier,
-            idleTimeout:      WEB_DRIVER_IDLE_TIMEOUT
+            ...additionalOptions,
+
+            name: jobName,
+
+            tunnelIdentifier,
+            idleTimeout,
+
+            ...timeout && {
+                maxDuration: timeout
+            }
         };
-
-        assign(initParams, browser);
-
-        if (timeout)
-            initParams.maxDuration = timeout;
-
 
         // NOTE: If IE11 is used, the "Display intranet sites in Compatibility View" option should be disabled.
         // We do this this via the 'prerun' parameter, which should run our script on the Sauce Labs side,

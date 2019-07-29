@@ -1,6 +1,5 @@
-import Promise from 'pinkie';
 import request from 'request';
-import promisify from 'pify';
+import { promisify } from 'util';
 import fs from 'fs';
 import { SAUCE_API_HOST } from './sauce-host';
 
