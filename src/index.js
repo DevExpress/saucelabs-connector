@@ -45,40 +45,49 @@ function disposeSauceConnectProcess (process) {
 
 export default class SaucelabsConnector {
     constructor (username, accessKey, options = {}) {
+        const timestamp = Date.now();
+
         const {
             createTunnel     = true,
             connectorLogging = true,
+        } = options;
+
+        this.options = { connectorLogging, createTunnel };
+
+        const {
             tunnelLogging    = false,
-            tunnelIdentifier = Date.now(),
-            logfile          = 'sc_' + tunnelIdentifier + '.log',
+            tunnelIdentifier = createTunnel ? timestamp : void 0,
+            logfile          = 'sc_' + (tunnelIdentifier || timestamp) + '.log',
             directDomains    = DEFAULT_DIRECT_DOMAINS,
             noSSLBumpDomains = [],
 
             ...sauceConnectOptions
         } = options;
 
-        this.username         = username;
-        this.accessKey        = accessKey;
-        this.tunnelIdentifier = tunnelIdentifier;
-
-        this.sauceConnectOptions = {
-            ...sauceConnectOptions,
-
-            username:         this.username,
-            accessKey:        this.accessKey,
-            tunnelIdentifier: this.tunnelIdentifier,
-            logfile:          tunnelLogging ? logfile : null,
-
-            ...noSSLBumpDomains.length && {
-                noSSLBumpDomains: noSSLBumpDomains.join(',')
-            },
-
-            ...directDomains.length && {
-                directDomains: directDomains.join(',')
-            }
-        };
-
+        this.username            = username;
+        this.accessKey           = accessKey;
+        this.tunnelIdentifier    = tunnelIdentifier;
+        this.sauceConnectOptions = null;
         this.sauceConnectProcess = null;
+
+        if (createTunnel) {
+            this.sauceConnectOptions = {
+                ...sauceConnectOptions,
+
+                username:         this.username,
+                accessKey:        this.accessKey,
+                tunnelIdentifier: this.tunnelIdentifier,
+                logfile:          tunnelLogging ? logfile : null,
+
+                ...noSSLBumpDomains.length && {
+                    noSSLBumpDomains: noSSLBumpDomains.join(',')
+                },
+
+                ...directDomains.length && {
+                    directDomains: directDomains.join(',')
+                }
+            };
+        }
 
         this.sauceStorage = new SauceStorage(this.username, this.accessKey);
 
@@ -88,7 +97,6 @@ export default class SaucelabsConnector {
             timeout:    WEB_DRIVER_CONFIGURATION_TIMEOUT
         });
 
-        this.options = { connectorLogging, createTunnel };
     }
 
     _log (message) {
@@ -134,9 +142,10 @@ export default class SaucelabsConnector {
         });
 
         const {
-            jobName          = jobOptions.name,
+            idleTimeout = WEB_DRIVER_IDLE_TIMEOUT,
+
+            name             = jobOptions.jobName,
             tunnelIdentifier = this.tunnelIdentifier,
-            idleTimeout      = WEB_DRIVER_IDLE_TIMEOUT,
 
             ...additionalOptions
         } = jobOptions;
@@ -144,10 +153,15 @@ export default class SaucelabsConnector {
         var initParams = {
             ...additionalOptions,
 
-            name: jobName,
-
-            tunnelIdentifier,
             idleTimeout,
+
+            ...name && {
+                name
+            },
+
+            ...tunnelIdentifier && {
+                tunnelIdentifier
+            },
 
             ...timeout && {
                 maxDuration: timeout

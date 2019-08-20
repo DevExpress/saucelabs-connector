@@ -32,7 +32,6 @@ class BrowserMock {
 
 test('Should handle custom options', async () => {
     let connectorOptions = null;
-    let browser          = null;
 
     jest.spyOn(Date, 'now').mockImplementationOnce(() => Date.UTC(2007, 1, 1));
 
@@ -60,7 +59,7 @@ test('Should handle custom options', async () => {
     expect(connectorOptions.directDomains).toEqual('*.google.com,*.gstatic.com,*.googleapis.com');
     expect(connectorOptions.foo).toEqual('bar');
 
-    browser = await sauceConnector.startBrowser(
+    const browser = await sauceConnector.startBrowser(
         { browserName: 'chrome' },
         'http://example.com',
         { jobName: 'job-name' },
@@ -78,8 +77,7 @@ test('Should handle custom options', async () => {
     expect(browser.opts.maxDuration).toEqual(4242);
 });
 
-
-test('Should not create a tunnel if  custom options', async () => {
+test('Should not create a tunnel if createTunnel is false', async () => {
     let connectorOptions = null;
 
     jest.spyOn(Date, 'now').mockImplementationOnce(() => Date.UTC(2007, 1, 1));
@@ -90,16 +88,67 @@ test('Should not create a tunnel if  custom options', async () => {
         cb(null, {});
     });
 
+    wd.promiseChainRemote.mockImplementationOnce((...args) => new BrowserMock(args));
+
     const sauceConnector = new SauceConnector('user', 'pass', {
         createTunnel: false
     });
 
     expect(sauceConnector.options.createTunnel).toEqual(false);
+    expect(sauceConnector.sauceConnectOptions).toEqual(null);
 
     await sauceConnector.connect();
 
     expect(sauceConnector.sauceConnectProcess).toEqual(null);
     expect(connectorOptions).toEqual(null);
+
+    const browser = await sauceConnector.startBrowser(
+        { browserName: 'chrome' },
+        'http://example.com',
+        { jobName: 'job-name' },
+        4242
+    );
+
+    expect(browser.opts).not.toHaveProperty('tunnelIdentifier');
+
+    await sauceConnector.disconnect();
+});
+
+
+test('Should allow using external tunnel', async () => {
+    let connectorOptions = null;
+
+    jest.spyOn(Date, 'now').mockImplementationOnce(() => Date.UTC(2007, 1, 1));
+
+    sauceConnect.mockImplementationOnce((opts, cb) => {
+        connectorOptions = opts;
+
+        cb(null, {});
+    });
+
+    wd.promiseChainRemote.mockImplementationOnce((...args) => new BrowserMock(args));
+
+    const sauceConnector = new SauceConnector('user', 'pass', {
+        createTunnel:     false,
+        tunnelIdentifier: 'ABRACADABRA'
+    });
+
+    expect(sauceConnector.options.createTunnel).toEqual(false);
+    expect(sauceConnector.sauceConnectOptions).toEqual(null);
+
+    await sauceConnector.connect();
+
+    expect(sauceConnector.sauceConnectProcess).toEqual(null);
+    expect(connectorOptions).toEqual(null);
+
+    const browser = await sauceConnector.startBrowser(
+        { browserName: 'chrome' },
+        'http://example.com',
+        { jobName: 'job-name' },
+        4242
+    );
+
+    expect(browser.opts.tunnelIdentifier).toEqual('ABRACADABRA');
 
     await sauceConnector.disconnect();
 });
