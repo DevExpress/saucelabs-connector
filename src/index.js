@@ -46,6 +46,7 @@ function disposeSauceConnectProcess (process) {
 export default class SaucelabsConnector {
     constructor (username, accessKey, options = {}) {
         const {
+            createTunnel     = true,
             connectorLogging = true,
             tunnelLogging    = false,
             tunnelIdentifier = Date.now(),
@@ -87,7 +88,7 @@ export default class SaucelabsConnector {
             timeout:    WEB_DRIVER_CONFIGURATION_TIMEOUT
         });
 
-        this.options = { connectorLogging };
+        this.options = { connectorLogging, createTunnel };
     }
 
     _log (message) {
@@ -179,11 +180,12 @@ export default class SaucelabsConnector {
             .sauceJobStatus();
     }
     async connect () {
-        this.sauceConnectProcess = await createSauceConnectProcess(this.sauceConnectOptions);
+        this.sauceConnectProcess = this.options.createTunnel ? await createSauceConnectProcess(this.sauceConnectOptions) : null;
     }
 
     async disconnect () {
-        await disposeSauceConnectProcess(this.sauceConnectProcess);
+        if (this.sauceConnectProcess)
+            await disposeSauceConnectProcess(this.sauceConnectProcess);
     }
 
     async waitForFreeMachines (machineCount, requestInterval, maxAttemptCount) {
