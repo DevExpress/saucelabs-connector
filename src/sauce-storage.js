@@ -4,8 +4,8 @@ import fs from 'fs';
 import { SAUCE_API_HOST } from './sauce-host';
 
 
-var requestPromised = promisify(request, Promise);
-var readFile        = promisify(fs.readFile, Promise);
+const requestPromised = promisify(request, Promise);
+const readFile        = promisify(fs.readFile, Promise);
 
 
 export default class SauceStorage {
@@ -15,13 +15,13 @@ export default class SauceStorage {
     }
 
     async _request (params) {
-        var result = await requestPromised(params);
+        const result = await requestPromised(params);
 
-        var statusCode = result.statusCode;
-        var body       = result.body;
+        const statusCode = result.statusCode;
+        const body       = result.body;
 
         if (statusCode !== 200) {
-            var message = [
+            const message = [
                 'Unexpected response from Sauce Labs.',
                 params.method + ' ' + params.url,
                 'Response status: ' + statusCode,
@@ -35,25 +35,25 @@ export default class SauceStorage {
     }
 
     async isFileAvailable (fileName) {
-        var params = {
+        const params = {
             method:  'GET',
             uri:     `https://${SAUCE_API_HOST}/rest/v1/storage/${this.user}`,
             headers: { 'Content-Type': 'application/json' },
             auth:    { user: this.user, pass: this.pass }
         };
 
-        var body  = await this._request(params);
-        var files = JSON.parse(body).files;
+        const body  = await this._request(params);
+        const files = JSON.parse(body).files;
 
-        var result = files.filter(file => file.name === fileName);
+        const result = files.filter(file => file.name === fileName);
 
         return result.length > 0;
     }
 
     async uploadFile (filePath, fileName) {
-        var buffer = await readFile(`${filePath}${fileName}`);
+        const buffer = await readFile(`${filePath}${fileName}`);
 
-        var params = {
+        const params = {
             method:  'POST',
             uri:     `https://${SAUCE_API_HOST}/rest/v1/storage/${this.user}/${fileName}?overwrite=true`,
             headers: { 'Content-Type': 'application/octet-stream' },

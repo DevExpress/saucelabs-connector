@@ -3,8 +3,12 @@
   "version": "1.0.0",
   "main": "lib/index",
   "description": "Helps connect the local machine to SauceLabs and start a remote browser.",
-  "author": "Alexander Moskovkin",
+  "author": {
+    "name": "Developer Express Inc.",
+    "url": "https://www.devexpress.com/"
+  },
   "contributors": [
+    "Alexander Moskovkin",
     "Georgiy Abbasov",
     "Andrey Belym"
   ],

@@ -105,19 +105,19 @@ export default class SaucelabsConnector {
     }
 
     async _getFreeMachineCount () {
-        var params = {
+        const params = {
             method: 'GET',
             url:    [`https://${SAUCE_API_HOST}/rest/v1/users`, this.username, 'concurrency'].join('/'),
             auth:   { user: this.username, pass: this.accessKey }
         };
 
-        var response = await requestPromised(params);
+        const response = await requestPromised(params);
 
         return JSON.parse(response.body).concurrency[this.username].remaining.overall;
     }
 
     async getSessionUrl (browser) {
-        var sessionId = await browser.getSessionId();
+        const sessionId = await browser.getSessionId();
 
         return `https://app.${SAUCE_API_HOST}/tests/${sessionId}`;
     }
@@ -125,9 +125,9 @@ export default class SaucelabsConnector {
     async startBrowser (browser, url, jobOptions = {}, timeout = null) {
         jobOptions = { ...jobOptions, ...browser };
 
-        var webDriver = wd.promiseChainRemote(`ondemand.${SAUCE_API_HOST}`, 80, this.username, this.accessKey);
+        const webDriver = wd.promiseChainRemote(`ondemand.${SAUCE_API_HOST}`, 80, this.username, this.accessKey);
 
-        var pingWebDriver = () => webDriver.eval('');
+        const pingWebDriver = () => webDriver.eval('');
 
         webDriver.once('status', () => {
             // HACK: if the webDriver doesn't get any command within 1000s, it fails
@@ -150,7 +150,7 @@ export default class SaucelabsConnector {
             ...additionalOptions
         } = jobOptions;
 
-        var initParams = {
+        const initParams = {
             ...additionalOptions,
 
             idleTimeout,
@@ -203,10 +203,10 @@ export default class SaucelabsConnector {
     }
 
     async waitForFreeMachines (machineCount, requestInterval, maxAttemptCount) {
-        var attempts = 0;
+        let attempts = 0;
 
-        while (attempts < maxAttemptCount) {
-            var freeMachineCount = await this._getFreeMachineCount();
+        while (attempts++ < maxAttemptCount) {
+            const freeMachineCount = await this._getFreeMachineCount();
 
             if (freeMachineCount >= machineCount)
                 return;
@@ -214,7 +214,6 @@ export default class SaucelabsConnector {
             this._log(`The number of free machines (${freeMachineCount}) is less than requested (${machineCount}).`);
 
             await wait(requestInterval);
-            attempts++;
         }
 
         throw new Error('There are no free machines');
