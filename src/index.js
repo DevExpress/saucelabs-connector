@@ -22,26 +22,10 @@ const WEB_DRIVER_CONFIGURATION_TIMEOUT     = 9 * 60 * 1000;
 // https://support.saucelabs.com/customer/portal/articles/2005359-some-https-sites-don-t-work-correctly-under-sauce-connect
 const DEFAULT_DIRECT_DOMAINS = ['*.google.com', '*.gstatic.com', '*.googleapis.com'];
 
-const requestPromised = promisify(request, Promise);
+const requestPromised     = promisify(request, Promise);
+const createSauceConnect  = promisify(sauceConnectLauncher);
+const disposeSauceConnect = promisify((process, ...args) => process.close(...args));
 
-function createSauceConnectProcess (options) {
-    return new Promise((resolve, reject) => {
-        sauceConnectLauncher(options, (err, process) => {
-            if (err) {
-                reject(err);
-                return;
-            }
-
-            resolve(process);
-        });
-    });
-}
-
-function disposeSauceConnectProcess (process) {
-    return new Promise(resolve => {
-        process.close(resolve);
-    });
-}
 
 export default class SaucelabsConnector {
     constructor (username, accessKey, options = {}) {
@@ -194,12 +178,12 @@ export default class SaucelabsConnector {
             .sauceJobStatus();
     }
     async connect () {
-        this.sauceConnectProcess = this.options.createTunnel ? await createSauceConnectProcess(this.sauceConnectOptions) : null;
+        this.sauceConnectProcess = this.options.createTunnel ? await createSauceConnect(this.sauceConnectOptions) : null;
     }
 
     async disconnect () {
         if (this.sauceConnectProcess)
-            await disposeSauceConnectProcess(this.sauceConnectProcess);
+            await disposeSauceConnect(this.sauceConnectProcess);
     }
 
     async waitForFreeMachines (machineCount, requestInterval, maxAttemptCount) {
