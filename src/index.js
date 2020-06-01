@@ -90,7 +90,7 @@ export default class SaucelabsConnector {
     async _getFreeMachineCount () {
         var params = {
             method: 'GET',
-            url:    [`https://${SAUCE_API_HOST}/rest/v1/users`, this.username, 'concurrency'].join('/'),
+            url:    [`https://${SAUCE_API_HOST}/rest/v1.2/users`, this.username, 'concurrency'].join('/'),
             auth:   { user: this.username, pass: this.accessKey }
         };
 
