@@ -66,6 +66,13 @@ export default class SaucelabsConnector {
             logfile:          tunnelLogging ? 'sc_' + this.tunnelIdentifier + '.log' : null
         };
 
+        if (process.env.HTTP_PROXY) {
+            this.sauceConnectOptions = Object.assign({}, this.sauceConnectOptions, {
+                proxy:       process.env.HTTP_PROXY.replace(/(^\w+:|^)\/\//, ''),
+                proxyTunnel: true
+            });
+        }
+
         if (noSSLBumpDomains.length)
             this.sauceConnectOptions.noSslBumpDomains = noSSLBumpDomains.join(',');
 
