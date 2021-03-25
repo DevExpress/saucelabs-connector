@@ -27,7 +27,13 @@ var jobOptions = {
     tags:    ['tag1', 'tag2', 'tag3']
 };
 
-var saucelabsConnector = new SauceLabsConnector('SAUCELABS_USERNAME', 'SAUCELABS_ACCESS_KEY');
+// See more information about options: https://github.com/bermi/sauce-connect-launcher/blob/master/README.md
+var sauceConnectOptions = {
+    verbose: false,
+    vv:      false
+};
+
+var saucelabsConnector = new SauceLabsConnector('SAUCELABS_USERNAME', 'SAUCELABS_ACCESS_KEY', sauceConnectOptions);
 var saucelabsBrowser   = null;
 
 // Connects the local machine to SauceLabs

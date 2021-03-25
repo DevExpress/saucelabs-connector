@@ -44,7 +44,9 @@ test('Should handle custom options', async () => {
     });
 
     const sauceConnector = new SauceConnector('user', 'pass', {
-        foo: 'bar'
+        verbose: false,
+        verboseDebugging: false,
+        vv: false
     });
 
     expect(sauceConnector.options.connectorLogging).toEqual(true);
@@ -57,7 +59,9 @@ test('Should handle custom options', async () => {
     expect(connectorOptions.tunnelIdentifier).toEqual(Date.UTC(2007, 1, 1));
     expect(connectorOptions.logfile).toEqual(null);
     expect(connectorOptions.directDomains).toEqual('*.google.com,*.gstatic.com,*.googleapis.com');
-    expect(connectorOptions.foo).toEqual('bar');
+    expect(connectorOptions.verbose).toEqual(false);
+    expect(connectorOptions.verboseDebugging).toEqual(false);
+    expect(connectorOptions.vv).toEqual(false);
 
     const browser = await sauceConnector.startBrowser(
         { browserName: 'chrome' },

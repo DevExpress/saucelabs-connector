@@ -6,6 +6,7 @@ import { toAbsPath } from 'read-file-relative';
 import sauceConnectLauncher from 'sauce-connect-launcher';
 import SauceStorage from './sauce-storage';
 import { SAUCE_API_HOST } from './sauce-host';
+import isIE11 from './utils/is-ie11';
 
 
 const PRERUN_SCRIPT_DIR_PATH                        = toAbsPath('./prerun/');
@@ -16,6 +17,10 @@ const WEB_DRIVER_PING_INTERVAL             = 5 * 60 * 1000;
 const WEB_DRIVER_CONFIGURATION_RETRY_DELAY = 30 * 1000;
 const WEB_DRIVER_CONFIGURATION_RETRIES     = 3;
 const WEB_DRIVER_CONFIGURATION_TIMEOUT     = 9 * 60 * 1000;
+const SAUCE_CONNECT_OPTIONS_DENYLIST       = [
+    'createTunnel',
+    'connectorLogging'
+];
 
 // NOTE: When using Appium on Android devices, the device browser navigates to 'https://google.com' after being started.
 // So we need to route traffic directly to Google servers to avoid re-signing it with Saucelabs SSL certificates.
@@ -43,9 +48,7 @@ export default class SaucelabsConnector {
             tunnelIdentifier = createTunnel ? timestamp : void 0,
             logfile          = 'sc_' + (tunnelIdentifier || timestamp) + '.log',
             directDomains    = DEFAULT_DIRECT_DOMAINS,
-            noSSLBumpDomains = [],
-
-            ...sauceConnectOptions
+            noSSLBumpDomains = []
         } = options;
 
         this.username            = username;
@@ -55,6 +58,9 @@ export default class SaucelabsConnector {
         this.sauceConnectProcess = null;
 
         if (createTunnel) {
+            // NOTE: we remove our internal options from the Sauce Connect options
+            const sauceConnectOptions = SaucelabsConnector._getFilteredSauceConnectOptions(options);
+
             this.sauceConnectOptions = {
                 ...sauceConnectOptions,
 
@@ -80,7 +86,15 @@ export default class SaucelabsConnector {
             retries:    WEB_DRIVER_CONFIGURATION_RETRIES,
             timeout:    WEB_DRIVER_CONFIGURATION_TIMEOUT
         });
+    }
 
+    static _getFilteredSauceConnectOptions (options) {
+        return Object.keys(options)
+            .filter(key => SAUCE_CONNECT_OPTIONS_DENYLIST.indexOf(key) === -1)
+            .reduce((obj, key) => {
+                obj[key] = options[key];
+                return obj;
+            }, {});
     }
 
     _log (message) {
@@ -155,7 +169,7 @@ export default class SaucelabsConnector {
         // NOTE: If IE11 is used, the "Display intranet sites in Compatibility View" option should be disabled.
         // We do this this via the 'prerun' parameter, which should run our script on the Sauce Labs side,
         // before the browser starts.
-        if (browser.browserName.toLowerCase() === 'internet explorer' && /11(\.\d*)?$/.test(browser.version)) {
+        if (isIE11(browser)) {
             // NOTE: We should upload the script to the sauce storage if it's not there yet.
             if (!await this.sauceStorage.isFileAvailable(DISABLE_COMPATIBILITY_MODE_IE_SCRIPT_FILENAME))
                 await this.sauceStorage.uploadFile(PRERUN_SCRIPT_DIR_PATH, DISABLE_COMPATIBILITY_MODE_IE_SCRIPT_FILENAME);
@@ -177,6 +191,7 @@ export default class SaucelabsConnector {
             .quit()
             .sauceJobStatus();
     }
+
     async connect () {
         this.sauceConnectProcess = this.options.createTunnel ? await createSauceConnect(this.sauceConnectOptions) : null;
     }
