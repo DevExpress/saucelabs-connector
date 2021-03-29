@@ -1,7 +1,9 @@
 export const MESSAGE = {
-    noFreeMachines:             'There are no free machines',
-    failedToCallSauceApi:       'Sauce Labs API request failed.\n{err}',
-    unexpectedSauceApiResponse: 'Unexpected response from Sauce Labs.\n{method} {url}\nResponse status: {statusCode}\nBody: {body}'
+    noFreeMachines:                        'There are no free machines',
+    failedToCallSauceApi:                  'Sauce Labs API request failed.\n{err}',
+    unexpectedSauceApiResponse:            'Unexpected response from Sauce Labs.\n{method} {url}\nResponse status: {statusCode}\nBody: {body}',
+    freeMachinesNumberIsLessThanRequested: 'The number of free machines ({freeMachineCount}) is less than requested ({machineCount}).',
+    browserStarted:                        '{browser.browserName} started. See {sessionUrl}'
 };
 
 export function getText (template, parameters) {

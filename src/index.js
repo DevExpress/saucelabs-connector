@@ -138,7 +138,7 @@ export default class SaucelabsConnector {
             if (this.options.connectorLogging) {
                 this
                     .getSessionUrl(webDriver)
-                    .then(sessionUrl => this._log(`${browser.browserName} started. See ${sessionUrl}`));
+                    .then(sessionUrl => this._log(getText(MESSAGE.browserStarted, { browserName: browser.browserName, sessionUrl })));
             }
         });
 
@@ -213,7 +213,7 @@ export default class SaucelabsConnector {
             if (freeMachineCount >= machineCount)
                 return;
 
-            this._log(`The number of free machines (${freeMachineCount}) is less than requested (${machineCount}).`);
+            this._log(getText(MESSAGE.freeMachinesNumberIsLessThanRequested, { freeMachineCount, machineCount }));
 
             await wait(requestInterval);
         }
