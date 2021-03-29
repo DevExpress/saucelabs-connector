@@ -1,5 +1,5 @@
 import { promisify } from 'util';
-import request from 'request';
+import got from 'got';
 import wd from 'wd';
 import wait from './utils/wait';
 import { toAbsPath } from 'read-file-relative';
@@ -7,6 +7,7 @@ import sauceConnectLauncher from 'sauce-connect-launcher';
 import SauceStorage from './sauce-storage';
 import { SAUCE_API_HOST } from './sauce-host';
 import isIE11 from './utils/is-ie11';
+import { MESSAGE, getText } from './messages';
 
 
 const PRERUN_SCRIPT_DIR_PATH                        = toAbsPath('./prerun/');
@@ -27,7 +28,6 @@ const SAUCE_CONNECT_OPTIONS_DENYLIST       = [
 // https://support.saucelabs.com/customer/portal/articles/2005359-some-https-sites-don-t-work-correctly-under-sauce-connect
 const DEFAULT_DIRECT_DOMAINS = ['*.google.com', '*.gstatic.com', '*.googleapis.com'];
 
-const requestPromised     = promisify(request, Promise);
 const createSauceConnect  = promisify(sauceConnectLauncher);
 const disposeSauceConnect = promisify((process, ...args) => process.close(...args));
 
@@ -102,16 +102,19 @@ export default class SaucelabsConnector {
             process.stdout.write(message + '\n');
     }
 
-    async _getFreeMachineCount () {
+    _getFreeMachineCount () {
         const params = {
-            method: 'GET',
-            url:    [`https://${SAUCE_API_HOST}/rest/v1/users`, this.username, 'concurrency'].join('/'),
-            auth:   { user: this.username, pass: this.accessKey }
+            method:   'GET',
+            url:      [`https://${SAUCE_API_HOST}/rest/v1/users`, this.username, 'concurrency'].join('/'),
+            username: this.username,
+            password: this.accessKey
         };
 
-        const response = await requestPromised(params);
-
-        return JSON.parse(response.body).concurrency[this.username].remaining.overall;
+        return got(params)
+            .then(response => JSON.parse(response.body).concurrency[this.username].remaining.overall)
+            .catch(err => {
+                throw new Error(getText(MESSAGE.failedToCallSauceApi, { err }));
+            });
     }
 
     async getSessionUrl (browser) {
@@ -215,6 +218,6 @@ export default class SaucelabsConnector {
             await wait(requestInterval);
         }
 
-        throw new Error('There are no free machines');
+        throw new Error(MESSAGE.noFreeMachines);
     }
 }

@@ -9,7 +9,7 @@ Helps connect the local machine to SauceLabs and start a remote browser.
 ## Usage
 ```js
 
-var SauceLabsConnector = require('saucelabs-connector');
+var SauceLabsConnector = require('saucelabs-connector').default;
 
 // Use this online tool to generate a valid platform configuration: 
 // https://wiki.saucelabs.com/display/DOCS/Platform+Configurator#/

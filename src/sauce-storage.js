@@ -1,11 +1,11 @@
-import request from 'request';
+import got from 'got';
 import { promisify } from 'util';
 import fs from 'fs';
 import { SAUCE_API_HOST } from './sauce-host';
+import { MESSAGE, getText } from './messages';
 
 
-const requestPromised = promisify(request, Promise);
-const readFile        = promisify(fs.readFile, Promise);
+const readFile = promisify(fs.readFile, Promise);
 
 
 export default class SauceStorage {
@@ -14,32 +14,33 @@ export default class SauceStorage {
         this.pass = pass;
     }
 
-    async _request (params) {
-        const result = await requestPromised(params);
+    _request (params) {
+        return got(params)
+            .then(response => {
+                if (response.statusCode !== 200) {
+                    throw new Error(getText(MESSAGE.unexpectedSauceApiResponse,
+                        {
+                            method:     params.method,
+                            url:        params.url,
+                            statusCode: response.statusCode,
+                            body:       JSON.stringify(response.body)
+                        }));
+                }
 
-        const statusCode = result.statusCode;
-        const body       = result.body;
-
-        if (statusCode !== 200) {
-            const message = [
-                'Unexpected response from Sauce Labs.',
-                params.method + ' ' + params.url,
-                'Response status: ' + statusCode,
-                'Body: ' + JSON.stringify(body)
-            ].join('\n');
-
-            throw new Error(message);
-        }
-
-        return body;
+                return response.body;
+            })
+            .catch(err => {
+                throw new Error(getText(MESSAGE.failedToCallSauceApi, { err }));
+            });
     }
 
     async isFileAvailable (fileName) {
         const params = {
-            method:  'GET',
-            uri:     `https://${SAUCE_API_HOST}/rest/v1/storage/${this.user}`,
-            headers: { 'Content-Type': 'application/json' },
-            auth:    { user: this.user, pass: this.pass }
+            method:   'GET',
+            uri:      `https://${SAUCE_API_HOST}/rest/v1/storage/${this.user}`,
+            headers:  { 'Content-Type': 'application/json' },
+            username: this.user,
+            pass:     this.pass
         };
 
         const body  = await this._request(params);
@@ -54,11 +55,12 @@ export default class SauceStorage {
         const buffer = await readFile(`${filePath}${fileName}`);
 
         const params = {
-            method:  'POST',
-            uri:     `https://${SAUCE_API_HOST}/rest/v1/storage/${this.user}/${fileName}?overwrite=true`,
-            headers: { 'Content-Type': 'application/octet-stream' },
-            auth:    { user: this.user, pass: this.pass },
-            body:    buffer.toString('binary', 0, buffer.length)
+            method:   'POST',
+            uri:      `https://${SAUCE_API_HOST}/rest/v1/storage/${this.user}/${fileName}?overwrite=true`,
+            headers:  { 'Content-Type': 'application/octet-stream' },
+            username: this.user,
+            password: this.pass,
+            body:     buffer.toString('binary', 0, buffer.length)
         };
 
         await this._request(params);

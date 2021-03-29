@@ -28,9 +28,9 @@
     "prepublishOnly": "publish-please guard"
   },
   "dependencies": {
+    "got": "^11.8.2",
     "os-family": "^1.0.0",
     "read-file-relative": "^1.2.0",
-    "request": "^2.88.0",
     "sauce-connect-launcher": "^1.2.7",
     "wd": "^1.11.3"
   },
