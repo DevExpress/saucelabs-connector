@@ -1,7 +1,9 @@
 import got from 'got';
-import { readFile } from 'fs/promises';
+import fs from 'fs';
 import { SAUCE_API_HOST } from './sauce-host';
 import { MESSAGE, getText } from './messages';
+
+const fsPromises = fs.promises;
 
 
 export default class SauceStorage {
@@ -48,7 +50,7 @@ export default class SauceStorage {
     }
 
     async uploadFile (filePath, fileName) {
-        const buffer = await readFile(`${filePath}${fileName}`)
+        const buffer = await fsPromises.readFile(`${filePath}${fileName}`)
             .catch(err => {
                 throw new Error(getText(MESSAGE.failedToReadIePrerunBat, { filePath, fileName, err }));
             });
