@@ -1,11 +1,7 @@
 import got from 'got';
-import { promisify } from 'util';
-import fs from 'fs';
+import { readFile } from 'fs/promises';
 import { SAUCE_API_HOST } from './sauce-host';
 import { MESSAGE, getText } from './messages';
-
-
-const readFile = promisify(fs.readFile, Promise);
 
 
 export default class SauceStorage {
@@ -37,10 +33,10 @@ export default class SauceStorage {
     async isFileAvailable (fileName) {
         const params = {
             method:   'GET',
-            uri:      `https://${SAUCE_API_HOST}/rest/v1/storage/${this.user}`,
+            url:      `https://${SAUCE_API_HOST}/rest/v1/storage/${this.user}`,
             headers:  { 'Content-Type': 'application/json' },
             username: this.user,
-            pass:     this.pass
+            password: this.pass
         };
 
         const body  = await this._request(params);
@@ -52,11 +48,14 @@ export default class SauceStorage {
     }
 
     async uploadFile (filePath, fileName) {
-        const buffer = await readFile(`${filePath}${fileName}`);
+        const buffer = await readFile(`${filePath}${fileName}`)
+            .catch(err => {
+                throw new Error(getText(MESSAGE.failedToReadIePrerunBat, { filePath, fileName, err }));
+            });
 
         const params = {
             method:   'POST',
-            uri:      `https://${SAUCE_API_HOST}/rest/v1/storage/${this.user}/${fileName}?overwrite=true`,
+            url:      `https://${SAUCE_API_HOST}/rest/v1/storage/${this.user}/${fileName}?overwrite=true`,
             headers:  { 'Content-Type': 'application/octet-stream' },
             username: this.user,
             password: this.pass,

@@ -18,7 +18,9 @@ const WEB_DRIVER_PING_INTERVAL             = 5 * 60 * 1000;
 const WEB_DRIVER_CONFIGURATION_RETRY_DELAY = 30 * 1000;
 const WEB_DRIVER_CONFIGURATION_RETRIES     = 3;
 const WEB_DRIVER_CONFIGURATION_TIMEOUT     = 9 * 60 * 1000;
-const SAUCE_CONNECT_OPTIONS_DENYLIST       = [
+
+const SAUCE_API_PORT                 = 80;
+const SAUCE_CONNECT_OPTIONS_DENYLIST = [
     'createTunnel',
     'connectorLogging'
 ];
@@ -126,7 +128,7 @@ export default class SaucelabsConnector {
     async startBrowser (browser, url, jobOptions = {}, timeout = null) {
         jobOptions = { ...jobOptions, ...browser };
 
-        const webDriver = wd.promiseChainRemote(`ondemand.${SAUCE_API_HOST}`, 80, this.username, this.accessKey);
+        const webDriver = wd.promiseChainRemote(`ondemand.${SAUCE_API_HOST}`, SAUCE_API_PORT, this.username, this.accessKey);
 
         const pingWebDriver = () => webDriver.eval('');
 
