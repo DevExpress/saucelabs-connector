@@ -1,39 +1,49 @@
 {
   "name": "saucelabs-connector",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "main": "lib/index",
   "description": "Helps connect the local machine to SauceLabs and start a remote browser.",
-  "author": "Alexander Moskovkin",
-  "contributors": "Georgiy Abbasov",
+  "author": {
+    "name": "Developer Express Inc.",
+    "url": "https://www.devexpress.com/"
+  },
+  "contributors": [
+    "Alexander Moskovkin",
+    "Georgiy Abbasov",
+    "Andrey Belym"
+  ],
   "homepage": "https://github.com/AlexanderMoskovkin/saucelabs-connector/",
   "bugs": "https://github.com/AlexanderMoskovkin/saucelabs-connector/issues",
   "license": "MIT",
+  "engines": {
+    "node": ">=10.0.0"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/AlexanderMoskovkin/saucelabs-connector.git"
   },
   "scripts": {
-    "test": "gulp lint"
+    "test": "gulp test",
+    "publish-please": "del-cli package-lock.json node_modules && npm i && publish-please",
+    "prepublishOnly": "publish-please guard"
   },
   "dependencies": {
-    "babel-runtime": "^5.8.20",
-    "lodash": "^4.13.1",
+    "got": "^11.8.2",
     "os-family": "^1.0.0",
-    "pify": "^2.3.0",
-    "pinkie": "^2.0.4",
     "read-file-relative": "^1.2.0",
-    "request": "^2.67.0",
-    "sauce-connect-launcher": "^1.2.5",
-    "wd": "^1.2.0"
+    "sauce-connect-launcher": "^1.2.7",
+    "wd": "^1.11.3"
   },
   "devDependencies": {
-    "babel-eslint": "^4.0.5",
+    "@babel/core": "^7.5.5",
+    "@babel/preset-env": "^7.5.5",
+    "babel-jest": "^24.8.0",
     "del": "^2.1.0",
-    "eslint": "4.18.2",
-    "eslint-plugin-babel": "^2.1.1",
-    "gulp": "^3.9.0",
-    "gulp-babel": "^5.2.0",
-    "gulp-eslint": "^1.0.0"
+    "gulp": "^4.0.2",
+    "gulp-babel": "^8.0.0",
+    "gulp-eslint": "^6.0.0",
+    "jest": "^24.8.0",
+    "publish-please": "^5.5.1"
   },
   "files": [
     "lib"

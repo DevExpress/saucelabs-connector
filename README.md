@@ -9,7 +9,7 @@ Helps connect the local machine to SauceLabs and start a remote browser.
 ## Usage
 ```js
 
-var SauceLabsConnector = require('saucelabs-connector');
+var SauceLabsConnector = require('saucelabs-connector').default;
 
 // Use this online tool to generate a valid platform configuration: 
 // https://wiki.saucelabs.com/display/DOCS/Platform+Configurator#/
@@ -27,7 +27,13 @@ var jobOptions = {
     tags:    ['tag1', 'tag2', 'tag3']
 };
 
-var saucelabsConnector = new SauceLabsConnector('SAUCELABS_USERNAME', 'SAUCELABS_ACCESS_KEY');
+// See more information about options: https://github.com/bermi/sauce-connect-launcher/blob/master/README.md
+var sauceConnectOptions = {
+    verbose: false,
+    vv:      false
+};
+
+var saucelabsConnector = new SauceLabsConnector('SAUCELABS_USERNAME', 'SAUCELABS_ACCESS_KEY', sauceConnectOptions);
 var saucelabsBrowser   = null;
 
 // Connects the local machine to SauceLabs

@@ -1,29 +1,39 @@
-var babel  = require('gulp-babel');
-var eslint = require('gulp-eslint');
-var gulp   = require('gulp');
-var del    = require('del');
+const { spawn } = require('child_process');
+const babel     = require('gulp-babel');
+const eslint    = require('gulp-eslint');
+const gulp      = require('gulp');
+const del       = require('del');
 
 
-gulp.task('clean', function () {
+function clean () {
     return del('lib');
-});
+}
 
-gulp.task('build', ['lint', 'prerun-scripts'], function () {
+function build () {
     return gulp.src('src/**/*.js')
         .pipe(babel())
         .pipe(gulp.dest('lib/'));
-});
+}
 
-gulp.task('prerun-scripts', ['clean'], function () {
+function prerunScripts () {
     return gulp
         .src(['src/prerun/*.bat'])
         .pipe(gulp.dest('lib/prerun/'));
-});
+}
 
-gulp.task('lint', function () {
+function lint () {
     return gulp
         .src(['src/**/*.js', 'Gulpfile.js'])
         .pipe(eslint())
         .pipe(eslint.format())
         .pipe(eslint.failOnError());
-});
+}
+
+function test () {
+    return spawn('npx jest', { stdio: 'inherit', shell: true });
+}
+
+exports.clean = clean;
+exports.lint  = lint;
+exports.build = gulp.parallel(lint, gulp.series(clean, gulp.parallel(build, prerunScripts)));
+exports.test  = gulp.series(exports.build, test);
