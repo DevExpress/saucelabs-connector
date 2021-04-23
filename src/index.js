@@ -107,13 +107,17 @@ export default class SaucelabsConnector {
     _getFreeMachineCount () {
         const params = {
             method:   'GET',
-            url:      [`https://${SAUCE_API_HOST}/rest/v1/users`, this.username, 'concurrency'].join('/'),
+            url:      [`https://${SAUCE_API_HOST}/rest/v1.2/users`, this.username, 'concurrency'].join('/'),
             username: this.username,
             password: this.accessKey
         };
 
         return got(params)
-            .then(response => JSON.parse(response.body).concurrency[this.username].remaining.overall)
+            .then(response => {
+                const teamConcurrency = JSON.parse(response.body).concurrency.team;
+
+                return teamConcurrency.allowed.vms - teamConcurrency.current.vms;
+            })
             .catch(err => {
                 throw new Error(getText(MESSAGE.failedToCallSauceApi, { err }));
             });
