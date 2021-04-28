@@ -114,9 +114,20 @@ export default class SaucelabsConnector {
 
         return got(params)
             .then(response => {
-                const teamConcurrency = JSON.parse(response.body).concurrency.team;
+                /* At the moment of the 28.04.21 - 5 MAC VMS (mac_vms) and 5 Windows VMS (vms) can be allocated independently
+                 * In this situation the site interface will show that 10/5 virtual devices are occupied
+                 * TODO: Make _getFreeMachineCount separate for Windows VMS and for Mac VMS
+                 */
 
-                return teamConcurrency.allowed.vms - teamConcurrency.current.vms;
+                const concurrency = JSON.parse(response.body).concurrency;
+                const orgFreeWindowsMachineCount = concurrency.organization.allowed.vms - concurrency.organization.current.vms
+                const orgFreeMacMachineCount = concurrency.organization.allowed.mac_vms - concurrency.organization.current.mac_vms
+                const orgFreeMachineCount = Math.min(orgFreeWindowsMachineCount, orgFreeMacMachineCount);
+                const teamFreeWindowsMachineCount = concurrency.team.allowed.vms - concurrency.team.current.vms;
+                const teamFreeMacMachineCount = concurrency.team.allowed.mac_vms - concurrency.team.current.mac_vms;
+                const teamFreeMachineCount = Math.min(teamFreeWindowsMachineCount, teamFreeMacMachineCount);
+
+                return Math.min(orgFreeMachineCount, teamFreeMachineCount);
             })
             .catch(err => {
                 throw new Error(getText(MESSAGE.failedToCallSauceApi, { err }));
