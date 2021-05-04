@@ -107,13 +107,28 @@ export default class SaucelabsConnector {
     _getFreeMachineCount () {
         const params = {
             method:   'GET',
-            url:      [`https://${SAUCE_API_HOST}/rest/v1/users`, this.username, 'concurrency'].join('/'),
+            url:      [`https://${SAUCE_API_HOST}/rest/v1.2/users`, this.username, 'concurrency'].join('/'),
             username: this.username,
             password: this.accessKey
         };
 
         return got(params)
-            .then(response => JSON.parse(response.body).concurrency[this.username].remaining.overall)
+            .then(response => {
+                /* At the moment of the 28.04.21 - 5 MAC VMS (mac_vms) and 5 Windows VMS (vms) can be allocated independently
+                 * In this situation the site interface will show that 10/5 virtual devices are occupied
+                 * TODO: Make _getFreeMachineCount separate for Windows VMS and for Mac VMS
+                 */
+
+                const concurrency = JSON.parse(response.body).concurrency;
+                const orgFreeWindowsMachineCount = concurrency.organization.allowed.vms - concurrency.organization.current.vms;
+                const orgFreeMacMachineCount = concurrency.organization.allowed.mac_vms - concurrency.organization.current.mac_vms;
+                const orgFreeMachineCount = Math.min(orgFreeWindowsMachineCount, orgFreeMacMachineCount);
+                const teamFreeWindowsMachineCount = concurrency.team.allowed.vms - concurrency.team.current.vms;
+                const teamFreeMacMachineCount = concurrency.team.allowed.mac_vms - concurrency.team.current.mac_vms;
+                const teamFreeMachineCount = Math.min(teamFreeWindowsMachineCount, teamFreeMacMachineCount);
+
+                return Math.min(orgFreeMachineCount, teamFreeMachineCount);
+            })
             .catch(err => {
                 throw new Error(getText(MESSAGE.failedToCallSauceApi, { err }));
             });
