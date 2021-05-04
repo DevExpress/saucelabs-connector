@@ -120,8 +120,8 @@ export default class SaucelabsConnector {
                  */
 
                 const concurrency = JSON.parse(response.body).concurrency;
-                const orgFreeWindowsMachineCount = concurrency.organization.allowed.vms - concurrency.organization.current.vms
-                const orgFreeMacMachineCount = concurrency.organization.allowed.mac_vms - concurrency.organization.current.mac_vms
+                const orgFreeWindowsMachineCount = concurrency.organization.allowed.vms - concurrency.organization.current.vms;
+                const orgFreeMacMachineCount = concurrency.organization.allowed.mac_vms - concurrency.organization.current.mac_vms;
                 const orgFreeMachineCount = Math.min(orgFreeWindowsMachineCount, orgFreeMacMachineCount);
                 const teamFreeWindowsMachineCount = concurrency.team.allowed.vms - concurrency.team.current.vms;
                 const teamFreeMacMachineCount = concurrency.team.allowed.mac_vms - concurrency.team.current.mac_vms;
