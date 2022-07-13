@@ -67,10 +67,8 @@ export default class SaucelabsConnector {
         };
 
         if (process.env.HTTP_PROXY) {
-            this.sauceConnectOptions = Object.assign({}, this.sauceConnectOptions, {
-                proxy:       process.env.HTTP_PROXY.replace(/(^\w+:|^)\/\//, ''),
-                proxyTunnel: true
-            });
+            this.sauceConnectOptions.proxy       = process.env.HTTP_PROXY.replace(/(^\w+:|^)\/\//, '');
+            this.sauceConnectOptions.proxyTunnel = true;
         }
 
         if (noSSLBumpDomains.length)
