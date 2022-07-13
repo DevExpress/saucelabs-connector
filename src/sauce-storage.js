@@ -1,12 +1,9 @@
-import Promise from 'pinkie';
-import request from 'request';
-import promisify from 'pify';
+import got from 'got';
 import fs from 'fs';
 import { SAUCE_API_HOST } from './sauce-host';
+import { MESSAGE, getText } from './messages';
 
-
-var requestPromised = promisify(request, Promise);
-var readFile        = promisify(fs.readFile, Promise);
+const fsPromises = fs.promises;
 
 
 export default class SauceStorage {
@@ -15,51 +12,56 @@ export default class SauceStorage {
         this.pass = pass;
     }
 
-    async _request (params) {
-        var result = await requestPromised(params);
+    _request (params) {
+        return got(params)
+            .then(response => {
+                if (response.statusCode !== 200) {
+                    throw new Error(getText(MESSAGE.unexpectedSauceApiResponse,
+                        {
+                            method:     params.method,
+                            url:        params.url,
+                            statusCode: response.statusCode,
+                            body:       JSON.stringify(response.body)
+                        }));
+                }
 
-        var statusCode = result.statusCode;
-        var body       = result.body;
-
-        if (statusCode !== 200) {
-            var message = [
-                'Unexpected response from Sauce Labs.',
-                params.method + ' ' + params.url,
-                'Response status: ' + statusCode,
-                'Body: ' + JSON.stringify(body)
-            ].join('\n');
-
-            throw new Error(message);
-        }
-
-        return body;
+                return response.body;
+            })
+            .catch(err => {
+                throw new Error(getText(MESSAGE.failedToCallSauceApi, { err }));
+            });
     }
 
     async isFileAvailable (fileName) {
-        var params = {
-            method:  'GET',
-            uri:     `https://${SAUCE_API_HOST}/rest/v1/storage/${this.user}`,
-            headers: { 'Content-Type': 'application/json' },
-            auth:    { user: this.user, pass: this.pass }
+        const params = {
+            method:   'GET',
+            url:      `https://${SAUCE_API_HOST}/rest/v1/storage/${this.user}`,
+            headers:  { 'Content-Type': 'application/json' },
+            username: this.user,
+            password: this.pass
         };
 
-        var body  = await this._request(params);
-        var files = JSON.parse(body).files;
+        const body  = await this._request(params);
+        const files = JSON.parse(body).files;
 
-        var result = files.filter(file => file.name === fileName);
+        const result = files.filter(file => file.name === fileName);
 
         return result.length > 0;
     }
 
     async uploadFile (filePath, fileName) {
-        var buffer = await readFile(`${filePath}${fileName}`);
+        const buffer = await fsPromises.readFile(`${filePath}${fileName}`)
+            .catch(err => {
+                throw new Error(getText(MESSAGE.failedToReadIePrerunBat, { filePath, fileName, err }));
+            });
 
-        var params = {
-            method:  'POST',
-            uri:     `https://${SAUCE_API_HOST}/rest/v1/storage/${this.user}/${fileName}?overwrite=true`,
-            headers: { 'Content-Type': 'application/octet-stream' },
-            auth:    { user: this.user, pass: this.pass },
-            body:    buffer.toString('binary', 0, buffer.length)
+        const params = {
+            method:   'POST',
+            url:      `https://${SAUCE_API_HOST}/rest/v1/storage/${this.user}/${fileName}?overwrite=true`,
+            headers:  { 'Content-Type': 'application/octet-stream' },
+            username: this.user,
+            password: this.pass,
+            body:     buffer.toString('binary', 0, buffer.length)
         };
 
         await this._request(params);
