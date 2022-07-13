@@ -77,6 +77,11 @@ export default class SaucelabsConnector {
 
                 ...directDomains.length && {
                     directDomains: directDomains.join(',')
+                },
+
+                ...process.env.HTTP_PROXY && {
+                    proxy:       process.env.HTTP_PROXY.replace(/(^\w+:|^)\/\//, ''),
+                    proxyTunnel: true
                 }
             };
         }
