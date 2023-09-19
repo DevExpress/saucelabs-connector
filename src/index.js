@@ -13,10 +13,10 @@ import WebDriver from 'webdriver';
 const PRERUN_SCRIPT_DIR_PATH                        = toAbsPath('./prerun/');
 const DISABLE_COMPATIBILITY_MODE_IE_SCRIPT_FILENAME = 'disable-intranet-compatibility-mode-in-ie.bat';
 
-const WEB_DRIVER_IDLE_TIMEOUT              = 1000;
-const WEB_DRIVER_PING_INTERVAL             = 5 * 60 * 1000;
-const WEB_DRIVER_CONFIGURATION_RETRY_DELAY = 30 * 1000;
-const WEB_DRIVER_CONFIGURATION_RETRIES     = 3;
+const WEB_DRIVER_IDLE_TIMEOUT          = 1000;
+const WEB_DRIVER_PING_INTERVAL         = 5 * 60 * 1000;
+const WEB_DRIVER_CONFIGURATION_RETRIES = 3;
+const WEB_DRIVER_CONFIGURATION_TIMEOUT = 9 * 60 * 1000;
 
 const SAUCE_API_PORT                 = 80;
 const SAUCE_CONNECT_OPTIONS_DENYLIST = [
@@ -185,7 +185,7 @@ export default class SaucelabsConnector {
             key:                    this.accessKey,
             capabilities:           initParams,
             logLevel:               'error',
-            connectionRetryTimeout: WEB_DRIVER_CONFIGURATION_RETRY_DELAY,
+            connectionRetryTimeout: WEB_DRIVER_CONFIGURATION_TIMEOUT,
             connectionRetryCount:   WEB_DRIVER_CONFIGURATION_RETRIES,
             path:                   '/wd/hub',
             automationProtocol:     'webdriver',
