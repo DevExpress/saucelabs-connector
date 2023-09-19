@@ -24,7 +24,7 @@
   },
   "scripts": {
     "test": "gulp test",
-    "publish-please": "del-cli package-lock.json node_modules && npm i && publish-please",
+    "publish-please": "del-cli node_modules && npm i && publish-please",
     "prepublishOnly": "publish-please guard"
   },
   "dependencies": {
