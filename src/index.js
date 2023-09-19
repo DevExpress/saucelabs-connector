@@ -1,6 +1,5 @@
 import { promisify } from 'util';
 import got from 'got';
-import wd from 'wd';
 import wait from './utils/wait';
 import { toAbsPath } from 'read-file-relative';
 import sauceConnectLauncher from 'sauce-connect-launcher';
@@ -8,16 +7,16 @@ import SauceStorage from './sauce-storage';
 import { SAUCE_API_HOST } from './sauce-host';
 import isIE11 from './utils/is-ie11';
 import { MESSAGE, getText } from './messages';
+import WebDriver from 'webdriver';
 
 
 const PRERUN_SCRIPT_DIR_PATH                        = toAbsPath('./prerun/');
 const DISABLE_COMPATIBILITY_MODE_IE_SCRIPT_FILENAME = 'disable-intranet-compatibility-mode-in-ie.bat';
 
-const WEB_DRIVER_IDLE_TIMEOUT              = 1000;
-const WEB_DRIVER_PING_INTERVAL             = 5 * 60 * 1000;
-const WEB_DRIVER_CONFIGURATION_RETRY_DELAY = 30 * 1000;
-const WEB_DRIVER_CONFIGURATION_RETRIES     = 3;
-const WEB_DRIVER_CONFIGURATION_TIMEOUT     = 9 * 60 * 1000;
+const WEB_DRIVER_IDLE_TIMEOUT          = 1000;
+const WEB_DRIVER_PING_INTERVAL         = 5 * 60 * 1000;
+const WEB_DRIVER_CONFIGURATION_RETRIES = 3;
+const WEB_DRIVER_CONFIGURATION_TIMEOUT = 9 * 60 * 1000;
 
 const SAUCE_API_PORT                 = 80;
 const SAUCE_CONNECT_OPTIONS_DENYLIST = [
@@ -87,12 +86,6 @@ export default class SaucelabsConnector {
         }
 
         this.sauceStorage = new SauceStorage(this.username, this.accessKey);
-
-        wd.configureHttp({
-            retryDelay: WEB_DRIVER_CONFIGURATION_RETRY_DELAY,
-            retries:    WEB_DRIVER_CONFIGURATION_RETRIES,
-            timeout:    WEB_DRIVER_CONFIGURATION_TIMEOUT
-        });
     }
 
     static _getFilteredSauceConnectOptions (options) {
@@ -140,29 +133,11 @@ export default class SaucelabsConnector {
     }
 
     async getSessionUrl (browser) {
-        const sessionId = await browser.getSessionId();
-
-        return `https://app.${SAUCE_API_HOST}/tests/${sessionId}`;
+        return `https://app.${SAUCE_API_HOST}/tests/${browser.sessionId}`;
     }
 
     async startBrowser (browser, url, jobOptions = {}, timeout = null) {
         jobOptions = { ...jobOptions, ...browser };
-
-        const webDriver = wd.promiseChainRemote(`ondemand.${SAUCE_API_HOST}`, SAUCE_API_PORT, this.username, this.accessKey);
-
-        const pingWebDriver = () => webDriver.eval('');
-
-        webDriver.once('status', () => {
-            // HACK: if the webDriver doesn't get any command within 1000s, it fails
-            // with the timeout error. We should send any command to avoid this.
-            webDriver.pingIntervalId = setInterval(pingWebDriver, WEB_DRIVER_PING_INTERVAL);
-
-            if (this.options.connectorLogging) {
-                this
-                    .getSessionUrl(webDriver)
-                    .then(sessionUrl => this._log(getText(MESSAGE.browserStarted, { browserName: browser.browserName, sessionUrl })));
-            }
-        });
 
         const {
             idleTimeout = WEB_DRIVER_IDLE_TIMEOUT,
@@ -202,9 +177,35 @@ export default class SaucelabsConnector {
             initParams.prerun = `sauce-storage:${DISABLE_COMPATIBILITY_MODE_IE_SCRIPT_FILENAME}`;
         }
 
-        await webDriver
-            .init(initParams)
-            .get(url);
+        const webDriver = await WebDriver.newSession({
+            protocol:               'http',
+            hostname:               `ondemand.${SAUCE_API_HOST}`,
+            port:                   SAUCE_API_PORT,
+            user:                   this.username,
+            key:                    this.accessKey,
+            capabilities:           initParams,
+            logLevel:               'error',
+            connectionRetryTimeout: WEB_DRIVER_CONFIGURATION_TIMEOUT,
+            connectionRetryCount:   WEB_DRIVER_CONFIGURATION_RETRIES,
+            path:                   '/wd/hub',
+            automationProtocol:     'webdriver',
+        });
+
+        const pingWebDriver = () => webDriver.execute('');
+
+        webDriver.once('request.performance', () => {
+            // HACK: if the webDriver doesn't get any command within 1000s, it fails
+            // with the timeout error. We should send any command to avoid this.
+            webDriver.pingIntervalId = setInterval(pingWebDriver, WEB_DRIVER_PING_INTERVAL);
+
+            if (this.options.connectorLogging) {
+                this
+                    .getSessionUrl(webDriver)
+                    .then(sessionUrl => this._log(getText(MESSAGE.browserStarted, { browserName: browser.browserName, sessionUrl })));
+            }
+        });
+
+        await webDriver.navigateTo(url);
 
         return webDriver;
     }
@@ -212,9 +213,7 @@ export default class SaucelabsConnector {
     async stopBrowser (browser) {
         clearInterval(browser.pingIntervalId);
 
-        await browser
-            .quit()
-            .sauceJobStatus();
+        await browser.deleteSession();
     }
 
     async connect () {
@@ -241,5 +240,9 @@ export default class SaucelabsConnector {
         }
 
         throw new Error(MESSAGE.noFreeMachines);
+    }
+
+    async setSauceJobStatus (browser, status) {
+        await browser.executeScript(`sauce:job-result=${status}`);
     }
 }

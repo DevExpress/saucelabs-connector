@@ -1,14 +1,13 @@
-import wd from 'wd';
+import wd from 'webdriver';
 import sauceConnect from 'sauce-connect-launcher';
 import SauceConnector from '../lib';
 
-jest.mock('wd');
+jest.mock('webdriver');
 jest.mock('sauce-connect-launcher');
 
 class BrowserMock {
     constructor (args) {
         this.args = args;
-        this.opts = null;
         this.url  = '';
         this.subscribedEvents = [];
     }
@@ -17,13 +16,7 @@ class BrowserMock {
         this.subscribedEvents.push(event);
     }
 
-    init (opts) {
-        this.opts = opts;
-
-        return this;
-    }
-
-    get (url) {
+    navigateTo (url) {
         this.url = url;
 
         return Promise.resolve();
@@ -35,7 +28,7 @@ test('Should handle custom options', async () => {
 
     jest.spyOn(Date, 'now').mockImplementationOnce(() => Date.UTC(2007, 1, 1));
 
-    wd.promiseChainRemote.mockImplementationOnce((...args) => new BrowserMock(args));
+    wd.newSession.mockImplementationOnce((args) => new BrowserMock(args));
 
     sauceConnect.mockImplementationOnce((opts, cb) => {
         connectorOptions = opts;
@@ -71,14 +64,17 @@ test('Should handle custom options', async () => {
     );
 
     expect(browser).toBeInstanceOf(BrowserMock);
-    expect(browser.args).toEqual(['ondemand.saucelabs.com', 80, 'user', 'pass']);
-    expect(browser.subscribedEvents).toEqual(['status']);
+    expect(browser.args.hostname).toEqual('ondemand.saucelabs.com');
+    expect(browser.args.port).toEqual(80);
+    expect(browser.args.user).toEqual('user');
+    expect(browser.args.key).toEqual('pass');
+    expect(browser.subscribedEvents).toEqual(['request.performance']);
     expect(browser.url).toEqual('http://example.com');
-    expect(browser.opts.browserName).toEqual('chrome');
-    expect(browser.opts.name).toEqual('job-name');
-    expect(browser.opts.tunnelIdentifier).toEqual(Date.UTC(2007, 1, 1));
-    expect(browser.opts.idleTimeout).toEqual(1000);
-    expect(browser.opts.maxDuration).toEqual(4242);
+    expect(browser.args.capabilities.browserName).toEqual('chrome');
+    expect(browser.args.capabilities.name).toEqual('job-name');
+    expect(browser.args.capabilities.tunnelIdentifier).toEqual(Date.UTC(2007, 1, 1));
+    expect(browser.args.capabilities.idleTimeout).toEqual(1000);
+    expect(browser.args.capabilities.maxDuration).toEqual(4242);
 });
 
 test('Should not create a tunnel if createTunnel is false', async () => {
@@ -92,7 +88,7 @@ test('Should not create a tunnel if createTunnel is false', async () => {
         cb(null, {});
     });
 
-    wd.promiseChainRemote.mockImplementationOnce((...args) => new BrowserMock(args));
+    wd.newSession.mockImplementationOnce((args) => new BrowserMock(args));
 
     const sauceConnector = new SauceConnector('user', 'pass', {
         createTunnel: false
@@ -113,7 +109,7 @@ test('Should not create a tunnel if createTunnel is false', async () => {
         4242
     );
 
-    expect(browser.opts).not.toHaveProperty('tunnelIdentifier');
+    expect(browser.args.capabilities).not.toHaveProperty('tunnelIdentifier');
 
     await sauceConnector.disconnect();
 });
@@ -130,7 +126,7 @@ test('Should allow using external tunnel', async () => {
         cb(null, {});
     });
 
-    wd.promiseChainRemote.mockImplementationOnce((...args) => new BrowserMock(args));
+    wd.newSession.mockImplementationOnce((args) => new BrowserMock(args));
 
     const sauceConnector = new SauceConnector('user', 'pass', {
         createTunnel:     false,
@@ -152,7 +148,7 @@ test('Should allow using external tunnel', async () => {
         4242
     );
 
-    expect(browser.opts.tunnelIdentifier).toEqual('ABRACADABRA');
+    expect(browser.args.capabilities.tunnelIdentifier).toEqual('ABRACADABRA');
 
     await sauceConnector.disconnect();
 });

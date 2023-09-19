@@ -1,6 +1,6 @@
 {
   "name": "saucelabs-connector",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "main": "lib/index",
   "description": "Helps connect the local machine to SauceLabs and start a remote browser.",
   "author": {
@@ -32,7 +32,7 @@
     "os-family": "^1.0.0",
     "read-file-relative": "^1.2.0",
     "sauce-connect-launcher": "^1.2.7",
-    "wd": "^1.11.3"
+    "webdriver": "^7.31.1"
   },
   "devDependencies": {
     "@babel/core": "^7.5.5",
