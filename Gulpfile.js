@@ -30,7 +30,7 @@ function lint () {
 }
 
 function test () {
-    return spawn('npx jest', { stdio: 'inherit', shell: true });
+    return spawn('npx --no-install jest', { stdio: 'inherit', shell: true });
 }
 
 exports.clean = clean;
